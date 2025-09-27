@@ -291,3 +291,69 @@
     $("#addInbox").onclick = async () => {
       const payload = {
         label: $("#addLabel").value.trim(),
+        provider: $("#addProvider").value,
+        daily_target: Number($("#addDaily").value || 20),
+        smtp_host: $("#smtpHost").value.trim(),
+        smtp_port: Number($("#smtpPort").value || 587),
+        smtp_user: $("#smtpUser").value.trim(),
+        smtp_pass: $("#smtpPass").value.trim(),
+        use_tls: $("#useTLS").checked,
+        imap_host: $("#imapHost").value.trim(),
+        imap_port: Number($("#imapPort").value || 993),
+        imap_user: $("#imapUser").value.trim(),
+        imap_pass: $("#imapPass").value.trim(),
+        use_ssl: $("#useSSL").checked
+      };
+      if (!payload.label || !payload.smtp_user || !payload.imap_user) {
+        alert("Please fill at least label, smtp_user and imap_user.");
+        return;
+      }
+      await api("/inboxes", { method:"POST", body: JSON.stringify(payload) });
+      await renderInboxes();
+      alert("Inbox created.");
+    };
+
+    // ------------------ logs ------------------
+    async function loadLogs() {
+      const id = $("#filterInboxId").value.trim();
+      const lim = Number($("#limitLogs").value || 50);
+      const q = new URLSearchParams();
+      q.set("limit", lim);
+      if (id) q.set("inbox_id", id);
+      const rows = await api(`/send-logs?${q.toString()}`);
+      const tbody = $("#logRows");
+      tbody.innerHTML = "";
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.className = "border-t border-white/5";
+        tr.innerHTML = `
+          <td class="py-2">${time(r.sent_at)}</td>
+          <td class="py-2 text-white/70">${fmt(r.inbox_id)}</td>
+          <td class="py-2">${fmt(r.to_email)}</td>
+          <td class="py-2">${fmt(r.subject)}</td>
+          <td class="py-2">${r.success ? '<span class="text-green-400">OK</span>' : '<span class="text-red-400">FAIL</span>'}</td>
+          <td class="py-2 text-white/50">${fmt(r.error)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    $("#loadLogs").onclick = loadLogs;
+
+    // ------------------ settings ------------------
+    $("#runNow").onclick = async () => {
+      await api("/run-now", { method:"POST" });
+      alert("Worker executed.");
+    };
+
+    // ------------------ initial load ------------------
+    (async function init() {
+      if (!token()) {
+        alert("Enter your APP_ADMIN_TOKEN (from Render → Environment) and click Save token.");
+      }
+      await Promise.all([loadStats(), renderInboxes()]);
+      // preload some logs
+      try { await loadLogs(); } catch {}
+    })();
+  </script>
+</body>
+</html>
