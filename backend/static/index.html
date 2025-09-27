@@ -24,31 +24,55 @@
     .tab { display:none; }
     .tab.active { display:block; }
     .btn { @apply px-4 py-2 rounded-xl bg-accent text-white hover:opacity-90 transition; }
+    .btn-ghost { @apply px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs; }
     .card { @apply bg-card/80 backdrop-blur border border-white/5 rounded-2xl p-5; }
     .input { @apply bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-accent/50; }
-    .toggle { @apply relative inline-flex h-6 w-11 items-center rounded-full; }
+    .tabbtn { @apply px-4 py-2 rounded-xl hover:bg-white/10; }
+    .tabbtn.active { @apply bg-white/10; }
   </style>
 </head>
 <body class="bg-bg text-white">
+
+  <!-- Auth Modal (blocks UI until valid token) -->
+  <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div class="w-[92%] max-w-md rounded-2xl border border-white/10 bg-gradient-to-b from-bg to-bg/70 p-6 shadow-2xl">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="h-9 w-9 rounded-xl bg-accent/20 flex items-center justify-center text-lg">🔒</div>
+        <h2 class="text-lg font-semibold tracking-tight">Enter Admin Token</h2>
+      </div>
+      <p class="text-white/60 text-sm mb-4">Paste the value of <code>APP_ADMIN_TOKEN</code> (from Render → Environment) to access the dashboard.</p>
+      <div class="space-y-3">
+        <input id="modalTokenInput" type="password" class="input w-full" placeholder="••••••••" />
+        <div class="flex items-center justify-between">
+          <label class="flex items-center gap-2 text-xs text-white/60 select-none">
+            <input id="toggleShow" type="checkbox" />
+            Show token
+          </label>
+          <button id="authSubmit" class="btn">Unlock</button>
+        </div>
+        <p id="authError" class="text-red-400 text-sm hidden">Invalid token. Please try again.</p>
+      </div>
+    </div>
+  </div>
+
   <!-- Top bar -->
-  <header class="border-b border-white/5 bg-bg/80 backdrop-blur sticky top-0 z-10">
+  <header class="border-b border-white/5 bg-bg/80 backdrop-blur sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="h-8 w-8 rounded-xl bg-accent/20 flex items-center justify-center">🔥</div>
         <h1 class="font-semibold tracking-tight">Email Warmer</h1>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
         <button id="darkToggle" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs">Toggle theme</button>
-        <input id="tokenInput" type="password" class="input w-56" placeholder="Admin token…" />
-        <button id="saveToken" class="px-3 py-1.5 rounded-xl bg-accent text-xs">Save token</button>
+        <button id="logoutBtn" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs">Logout</button>
       </div>
     </div>
     <nav class="max-w-7xl mx-auto px-4">
       <ul class="flex gap-2 pb-2">
-        <li><button data-tab="dash" class="tabbtn px-4 py-2 rounded-xl bg-white/10">Dashboard</button></li>
-        <li><button data-tab="inboxes" class="tabbtn px-4 py-2 rounded-xl hover:bg-white/10">Inboxes</button></li>
-        <li><button data-tab="logs" class="tabbtn px-4 py-2 rounded-xl hover:bg-white/10">Logs</button></li>
-        <li><button data-tab="settings" class="tabbtn px-4 py-2 rounded-xl hover:bg-white/10">Settings</button></li>
+        <li><button data-tab="dash" class="tabbtn active">Dashboard</button></li>
+        <li><button data-tab="inboxes" class="tabbtn">Inboxes</button></li>
+        <li><button data-tab="logs" class="tabbtn">Logs</button></li>
+        <li><button data-tab="settings" class="tabbtn">Settings</button></li>
       </ul>
     </nav>
   </header>
@@ -66,7 +90,7 @@
       <div class="card mt-6">
         <div class="flex items-center justify-between mb-3">
           <h2 class="font-medium">Per-inbox (today)</h2>
-          <button id="refreshStats" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs">Refresh</button>
+          <button id="refreshStats" class="btn-ghost">Refresh</button>
         </div>
         <table class="w-full text-sm">
           <thead class="text-white/60">
@@ -83,7 +107,7 @@
         <div class="card md:col-span-2">
           <div class="flex items-center justify-between mb-3">
             <h2 class="font-medium">Connected Inboxes</h2>
-            <button id="reloadInboxes" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs">Reload</button>
+            <button id="reloadInboxes" class="btn-ghost">Reload</button>
           </div>
           <table class="w-full text-sm">
             <thead class="text-white/60">
@@ -133,7 +157,7 @@
         <div class="flex items-center gap-3 mb-4">
           <input id="filterInboxId" class="input w-72" placeholder="Filter by inbox_id (optional)" />
           <input id="limitLogs" class="input w-24" type="number" value="50" />
-          <button id="loadLogs" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs">Load</button>
+          <button id="loadLogs" class="btn-ghost">Load</button>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
@@ -178,59 +202,102 @@
   <script>
     // ------------------ helpers ------------------
     const API = window.location.origin;
-    const $ = (sel) => document.querySelector(sel);
+    const $  = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
     const fmt = (s) => s ?? "";
     const time = (iso) => iso ? new Date(iso).toLocaleString() : "";
 
-    function token() {
-      return localStorage.getItem("APP_ADMIN_TOKEN") || "";
-    }
-    function setToken(v) {
-      localStorage.setItem("APP_ADMIN_TOKEN", v || "");
-    }
+    function token() { return localStorage.getItem("APP_ADMIN_TOKEN") || ""; }
+    function setToken(v) { localStorage.setItem("APP_ADMIN_TOKEN", v || ""); }
+    function clearToken() { localStorage.removeItem("APP_ADMIN_TOKEN"); }
+
     async function api(path, opts={}) {
       const headers = Object.assign({"Content-Type":"application/json","X-Admin-Token": token()}, opts.headers || {});
       const res = await fetch(path.startsWith("http") ? path : `${API}${path}`, Object.assign({}, opts, {headers}));
+      // If unauthorized, force modal
+      if (res.status === 401) {
+        showAuth(true);
+        throw new Error("Unauthorized");
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     }
 
-    // ------------------ theme/token ------------------
+    // ------------------ theme, tabs, logout ------------------
     $("#darkToggle").onclick = () => document.documentElement.classList.toggle("dark");
-    $("#tokenInput").value = token();
-    $("#saveToken").onclick = () => {
-      setToken($("#tokenInput").value.trim());
-      alert("Token saved.");
-    };
+    $("#logoutBtn").onclick = () => { clearToken(); showAuth(false); };
 
-    // ------------------ tabs ------------------
     $$(".tabbtn").forEach(btn => btn.onclick = () => {
       const t = btn.dataset.tab;
-      $$(".tabbtn").forEach(b => b.classList.remove("bg-white/10"));
-      btn.classList.add("bg-white/10");
+      $$(".tabbtn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
       $$(".tab").forEach(el => el.classList.remove("active"));
       $(`#tab-${t}`).classList.add("active");
     });
 
+    // ------------------ auth modal logic ------------------
+    const modal = $("#authModal");
+    const input = $("#modalTokenInput");
+    const errorEl = $("#authError");
+
+    $("#toggleShow").onchange = (e) => {
+      input.type = e.target.checked ? "text" : "password";
+    };
+
+    async function validateAndStore(t) {
+      try {
+        // hit a protected endpoint to verify the token
+        const ok = await fetch(`${API}/inboxes`, {
+          headers: { "X-Admin-Token": t }
+        });
+        if (ok.status !== 200) throw new Error("bad");
+        setToken(t);
+        errorEl.classList.add("hidden");
+        return true;
+      } catch {
+        errorEl.classList.remove("hidden");
+        return false;
+      }
+    }
+
+    function showAuth(bad=false) {
+      if (bad) errorEl.classList.remove("hidden");
+      input.value = "";
+      modal.classList.remove("hidden");
+      modal.style.display = "flex";
+      setTimeout(()=>input.focus(), 50);
+    }
+
+    function hideAuth() {
+      modal.classList.add("hidden");
+      modal.style.display = "none";
+    }
+
+    $("#authSubmit").onclick = async () => {
+      const t = input.value.trim();
+      if (!t) { errorEl.classList.remove("hidden"); return; }
+      if (await validateAndStore(t)) {
+        hideAuth();
+        init(); // load UI
+      }
+    };
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") $("#authSubmit").click();
+    });
+
     // ------------------ dashboard ------------------
     async function loadStats() {
-      try {
-        const data = await api("/stats");
-        $("#stat-inboxes").textContent = data.total_inboxes;
-        $("#stat-today").textContent   = data.sends_today;
-        $("#stat-total").textContent   = data.total_sends;
-        const tbody = $("#perInboxToday");
-        tbody.innerHTML = "";
-        data.per_inbox_today.forEach(row => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td class="py-2">${fmt(row.inbox_id)}</td><td class="py-2">${row.count}</td>`;
-          tbody.appendChild(tr);
-        });
-      } catch (e) {
-        console.error(e);
-        alert("Failed loading stats. Check token.");
-      }
+      const data = await api("/stats");
+      $("#stat-inboxes").textContent = data.total_inboxes;
+      $("#stat-today").textContent   = data.sends_today;
+      $("#stat-total").textContent   = data.total_sends;
+      const tbody = $("#perInboxToday");
+      tbody.innerHTML = "";
+      data.per_inbox_today.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td class="py-2">${fmt(row.inbox_id)}</td><td class="py-2">${row.count}</td>`;
+        tbody.appendChild(tr);
+      });
     }
     $("#refreshStats").onclick = loadStats;
 
@@ -254,14 +321,13 @@
           </td>
           <td class="py-2">${time(i.created_at)}</td>
           <td class="py-2">
-            <button class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs" data-save="${i.id}">Save</button>
-            <button class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs" data-peers="${i.id}">Peers</button>
+            <button class="btn-ghost" data-save="${i.id}">Save</button>
+            <button class="btn-ghost" data-peers="${i.id}">Peers</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
 
-      // Save handlers
       $$("button[data-save]").forEach(btn => {
         btn.onclick = async () => {
           const id = btn.getAttribute("data-save");
@@ -272,7 +338,6 @@
         };
       });
 
-      // Peer viewer
       $$("button[data-peers]").forEach(btn => {
         btn.onclick = async () => {
           const id = btn.getAttribute("data-peers");
@@ -345,14 +410,25 @@
       alert("Worker executed.");
     };
 
-    // ------------------ initial load ------------------
-    (async function init() {
-      if (!token()) {
-        alert("Enter your APP_ADMIN_TOKEN (from Render → Environment) and click Save token.");
-      }
+    // ------------------ init ------------------
+    async function init() {
       await Promise.all([loadStats(), renderInboxes()]);
-      // preload some logs
       try { await loadLogs(); } catch {}
+    }
+
+    // On load: check for stored token; validate; else show modal
+    (async function bootstrap() {
+      const t = token();
+      if (!t) { showAuth(false); return; }
+      // validate silently
+      try {
+        const ok = await fetch(`${API}/inboxes`, { headers: { "X-Admin-Token": t } });
+        if (ok.status !== 200) throw new Error();
+        hideAuth();
+        init();
+      } catch {
+        showAuth(true);
+      }
     })();
   </script>
 </body>
