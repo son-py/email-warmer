@@ -2,10 +2,10 @@
 <html lang="en" class="dark">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Email Warmer • Dashboard</title>
 
-  <!-- Tailwind via CDN -->
+  <!-- Tailwind via CDN (no @apply anywhere below) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -13,13 +13,13 @@
       theme: {
         extend: {
           colors: {
-            // deep, modern dark palette
-            ink:     '#0b1220',   // page bg (deep navy-black)
-            inkSoft: '#0e1626',   // section bg
-            surface: '#101a2b',   // cards / inputs
-            hover:   '#16243a',   // hover state
+            ink:     '#0b1220',   // page bg (navy/black)
+            inkSoft: '#0f172a',   // section bg
+            card:    '#111827',   // cards
+            slateLine: '#1f2937', // borders
+            pill:    '#0b1730',
             accent:  '#7c3aed',   // purple
-            sky:     '#0ea5e9',   // cyan
+            cyan:    '#06b6d4'    // cyan
           }
         }
       }
@@ -27,404 +27,29 @@
   </script>
 
   <style>
-    /* Reusable UI atoms */
-    .card      { @apply bg-surface/90 backdrop-blur border border-white/10 rounded-2xl p-5 shadow-lg shadow-black/20; }
-    .btn       { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-white font-medium
-                        bg-gradient-to-r from-accent to-sky border border-white/10
-                        hover:opacity-95 hover:shadow-[0_0_0_3px_rgba(14,165,233,0.15)]
-                        transition focus:outline-none focus:ring-2 focus:ring-sky/40; }
-    .btn-ghost { @apply inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl text-white/90
-                        bg-white/5 border border-white/10 hover:bg-white/10 transition; }
-    .input     { @apply appearance-none w-full rounded-xl px-3 py-2 text-sm
-                        bg-surface text-white placeholder-white/60 border border-white/10
-                        focus:outline-none focus:ring-2 focus:ring-sky/40; }
-    .tabpill   { @apply rounded-2xl px-4 py-2 bg-inkSoft border border-white/10 text-white/80
-                        hover:bg-hover hover:text-white transition; }
-    .tabpill.active { @apply bg-gradient-to-r from-accent/40 to-sky/40 text-white border-transparent; }
-    .tab { display:none; } .tab.active { display:block; }
-
-    /* Auth modal visuals */
-    .modal-card { @apply w-[92%] max-w-md rounded-2xl border border-white/10
-                         bg-gradient-to-b from-inkSoft to-surface/80 p-6 shadow-2xl; }
-    .glow       { box-shadow: 0 10px 30px rgba(14,165,233,.12); }
-
-    /* Tables */
-    th, td { @apply pr-4; }
+    .tab{display:none}
+    .tab.active{display:block}
   </style>
 </head>
-<body class="bg-ink text-white">
+<body class="bg-ink text-white selection:bg-cyan-500 selection:text-black">
 
-  <!-- ===== AUTH MODAL (blocks UI until valid token) ===== -->
-  <div id="authModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm">
-    <div class="modal-card glow">
+  <!-- ===== TOKEN MODAL ===== -->
+  <div id="authModal"
+       class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div class="w-[92%] max-w-md rounded-2xl border border-slate-700 bg-gradient-to-b from-inkSoft to-card/80 p-6 shadow-2xl">
       <div class="flex items-center gap-3 mb-3">
-        <div class="h-10 w-10 rounded-xl bg-accent/20 flex items-center justify-center text-xl">🔒</div>
-        <h2 class="text-xl font-semibold">Enter Admin Token</h2>
+        <div class="h-10 w-10 rounded-xl bg-cyan-500/20 flex items-center justify-center text-xl">🔒</div>
+        <h2 class="text-xl font-bold tracking-tight">Enter Admin Token</h2>
       </div>
-      <p class="text-white/60 text-sm mb-4">Paste your <code>APP_ADMIN_TOKEN</code> (Render → Environment) to unlock the dashboard.</p>
+      <p class="text-white/70 text-sm mb-4">Paste the value of <code>APP_ADMIN_TOKEN</code> to unlock the dashboard.</p>
       <div class="space-y-3">
-        <input id="modalTokenInput" type="password" class="input" placeholder="••••••••" />
+        <input id="modalTokenInput" type="password"
+               class="w-full rounded-xl bg-card text-white placeholder:text-slate-400 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+               placeholder="••••••••" />
         <div class="flex items-center justify-between">
-          <label class="flex items-center gap-2 text-xs text-white/60 select-none">
-            <input id="toggleShow" type="checkbox" />
+          <label class="flex items-center gap-2 text-xs text-white/70 select-none">
+            <input id="toggleShow" type="checkbox" class="accent-cyan-500">
             Show token
           </label>
-          <button id="authSubmit" class="btn px-5">Unlock</button>
-        </div>
-        <p id="authError" class="text-red-400 text-sm hidden">Invalid token. Please try again.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== TOP BAR ===== -->
-  <header class="border-b border-white/10 bg-ink/80 backdrop-blur sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-accent/30 to-sky/30 flex items-center justify-center">🔥</div>
-        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">
-          <span class="bg-gradient-to-r from-white via-sky to-white bg-clip-text text-transparent">Email Warmer</span>
-        </h1>
-      </div>
-      <div class="flex items-center gap-2">
-        <button id="darkToggle"  class="btn-ghost">Toggle theme</button>
-        <button id="logoutBtn"   class="btn-ghost">Logout</button>
-      </div>
-    </div>
-
-    <!-- Tabs: pill boxes with hover/active states -->
-    <nav class="max-w-7xl mx-auto px-4 pb-3">
-      <ul class="flex gap-2">
-        <li><button data-tab="dash"     class="tabpill active">Dashboard</button></li>
-        <li><button data-tab="inboxes"  class="tabpill">Inboxes</button></li>
-        <li><button data-tab="logs"     class="tabpill">Logs</button></li>
-        <li><button data-tab="settings" class="tabpill">Settings</button></li>
-      </ul>
-    </nav>
-  </header>
-
-  <!-- ===== BODY ===== -->
-  <main class="max-w-7xl mx-auto px-4 py-6 space-y-8">
-
-    <!-- ============ DASHBOARD ============ -->
-    <section id="tab-dash" class="tab active">
-      <div class="grid md:grid-cols-3 gap-4">
-        <div class="card">
-          <div class="text-white/60 text-xs">Total inboxes</div>
-          <div id="stat-inboxes" class="text-3xl font-semibold mt-1">—</div>
-        </div>
-        <div class="card">
-          <div class="text-white/60 text-xs">Sends today</div>
-          <div id="stat-today" class="text-3xl font-semibold mt-1">—</div>
-        </div>
-        <div class="card">
-          <div class="text-white/60 text-xs">All-time sends</div>
-          <div id="stat-total" class="text-3xl font-semibold mt-1">—</div>
-        </div>
-      </div>
-
-      <div class="card mt-6">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="font-medium">Per-inbox (today)</h2>
-          <button id="refreshStats" class="btn-ghost">Refresh</button>
-        </div>
-        <table class="w-full text-sm">
-          <thead class="text-white/60">
-            <tr><th class="text-left py-2">Inbox ID</th><th class="text-left py-2">Count</th></tr>
-          </thead>
-          <tbody id="perInboxToday"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ============ INBOXES ============ -->
-    <section id="tab-inboxes" class="tab">
-      <div class="grid md:grid-cols-3 gap-4">
-        <!-- List -->
-        <div class="card md:col-span-2">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="font-medium">Connected Inboxes</h2>
-            <button id="reloadInboxes" class="btn-ghost">Reload</button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead class="text-white/60">
-                <tr>
-                  <th class="text-left py-2">Label</th>
-                  <th class="text-left py-2">Daily target</th>
-                  <th class="text-left py-2">Active</th>
-                  <th class="text-left py-2">Created</th>
-                  <th class="text-left py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="inboxTable"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Create -->
-        <div class="card">
-          <h2 class="font-medium mb-3">Add Inbox</h2>
-          <div class="space-y-2">
-            <input id="addLabel" class="input" placeholder="Label (email address)" />
-            <select id="addProvider" class="input">
-              <option value="smtp">SMTP</option>
-            </select>
-            <input id="addDaily" class="input" type="number" value="20" min="1" placeholder="Daily target" />
-
-            <div class="grid grid-cols-2 gap-2">
-              <input id="smtpHost" class="input" placeholder="SMTP host (smtp.office365.com)" />
-              <input id="smtpPort" class="input" type="number" placeholder="587" />
-              <input id="smtpUser" class="input" placeholder="SMTP user" />
-              <input id="smtpPass" class="input" placeholder="SMTP pass" />
-              <label class="flex items-center gap-2 col-span-2 text-sm text-white/80">
-                <input id="useTLS" type="checkbox" checked class="accent-sky" /> Use TLS
-              </label>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <input id="imapHost" class="input" placeholder="IMAP host (outlook.office365.com)" />
-              <input id="imapPort" class="input" type="number" placeholder="993" />
-              <input id="imapUser" class="input" placeholder="IMAP user" />
-              <input id="imapPass" class="input" placeholder="IMAP pass" />
-              <label class="flex items-center gap-2 col-span-2 text-sm text-white/80">
-                <input id="useSSL" type="checkbox" checked class="accent-sky" /> Use SSL
-              </label>
-            </div>
-
-            <button id="addInbox" class="btn w-full py-2.5">Create</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ LOGS ============ -->
-    <section id="tab-logs" class="tab">
-      <div class="card">
-        <div class="flex items-center gap-3 mb-4">
-          <input id="filterInboxId" class="input w-72" placeholder="Filter by inbox_id (optional)" />
-          <input id="limitLogs" class="input w-24" type="number" value="50" />
-          <button id="loadLogs" class="btn-ghost">Load</button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="text-white/60">
-              <tr>
-                <th class="text-left py-2">Time</th>
-                <th class="text-left py-2">Inbox</th>
-                <th class="text-left py-2">To</th>
-                <th class="text-left py-2">Subject</th>
-                <th class="text-left py-2">Status</th>
-                <th class="text-left py-2">Error</th>
-              </tr>
-            </thead>
-            <tbody id="logRows"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ SETTINGS ============ -->
-    <section id="tab-settings" class="tab">
-      <div class="grid md:grid-cols-2 gap-4">
-        <div class="card">
-          <h2 class="font-medium mb-2">Admin Actions</h2>
-          <p class="text-white/60 text-sm mb-3">Trigger the worker immediately.</p>
-          <button id="runNow" class="btn">Run Now</button>
-        </div>
-
-        <div class="card">
-          <h2 class="font-medium mb-2">Tips</h2>
-          <ul class="list-disc list-inside text-white/70 text-sm space-y-1">
-            <li>Start with 10–20 emails/day per inbox; ramp gradually.</li>
-            <li>Use inboxes you control; add 2–5 peers for natural traffic.</li>
-            <li>Use the Logs tab to confirm sends/replies/star events.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ====== SCRIPTS ====== -->
-  <script>
-    // ---------- helpers ----------
-    const API = window.location.origin;
-    const $  = (sel) => document.querySelector(sel);
-    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-    const fmt = (s) => s ?? "";
-    const time = (iso) => iso ? new Date(iso).toLocaleString() : "";
-
-    function token()      { return localStorage.getItem("APP_ADMIN_TOKEN") || ""; }
-    function setToken(v)  { localStorage.setItem("APP_ADMIN_TOKEN", v || ""); }
-    function clearToken() { localStorage.removeItem("APP_ADMIN_TOKEN"); }
-
-    async function api(path, opts={}) {
-      const headers = Object.assign({"Content-Type":"application/json","X-Admin-Token": token()}, opts.headers || {});
-      const res = await fetch(path.startsWith("http") ? path : `${API}${path}`, Object.assign({}, opts, {headers}));
-      if (res.status === 401) { showAuth(true); throw new Error("Unauthorized"); }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    }
-
-    // ---------- theme / tabs / auth ----------
-    $("#darkToggle").onclick = () => document.documentElement.classList.toggle("dark");
-    $("#logoutBtn").onclick  = () => { clearToken(); showAuth(false); };
-
-    $$(".tabpill").forEach(btn => btn.onclick = () => {
-      const t = btn.dataset.tab;
-      $$(".tabpill").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      $$(".tab").forEach(el => el.classList.remove("active"));
-      $(`#tab-${t}`).classList.add("active");
-    });
-
-    const modal   = $("#authModal");
-    const input   = $("#modalTokenInput");
-    const errorEl = $("#authError");
-
-    $("#toggleShow").onchange = (e) => { input.type = e.target.checked ? "text" : "password"; };
-
-    async function validateAndStore(t) {
-      const ok = await fetch(`${API}/inboxes`, { headers: { "X-Admin-Token": t } });
-      if (ok.status !== 200) return false;
-      setToken(t); return true;
-    }
-    function showAuth(bad=false) {
-      if (bad) errorEl.classList.remove("hidden"); else errorEl.classList.add("hidden");
-      input.value = ""; modal.classList.remove("hidden"); modal.classList.add("flex"); setTimeout(()=>input.focus(), 50);
-    }
-    function hideAuth() { modal.classList.add("hidden"); modal.classList.remove("flex"); }
-
-    $("#authSubmit").onclick = async () => {
-      const t = input.value.trim(); if (!t) { errorEl.classList.remove("hidden"); return; }
-      if (await validateAndStore(t)) { hideAuth(); init(); } else { errorEl.classList.remove("hidden"); }
-    };
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter") $("#authSubmit").click(); });
-
-    // ---------- dashboard ----------
-    async function loadStats() {
-      const data = await api("/stats");
-      $("#stat-inboxes").textContent = data.total_inboxes;
-      $("#stat-today").textContent   = data.sends_today;
-      $("#stat-total").textContent   = data.total_sends;
-      const tbody = $("#perInboxToday"); tbody.innerHTML = "";
-      data.per_inbox_today.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td class="py-2">${fmt(row.inbox_id)}</td><td class="py-2">${row.count}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-    $("#refreshStats").onclick = loadStats;
-
-    // ---------- inboxes ----------
-    async function renderInboxes() {
-      const rows = await api("/inboxes");
-      const tbody = $("#inboxTable"); tbody.innerHTML = "";
-      rows.forEach(i => {
-        const tr = document.createElement("tr");
-        tr.className = "border-t border-white/10";
-        tr.innerHTML = `
-          <td class="py-2">${fmt(i.label)}</td>
-          <td class="py-2"><input type="number" value="${i.daily_target}" min="1" class="input w-24" data-inbox="${i.id}" /></td>
-          <td class="py-2">
-            <label class="inline-flex items-center gap-2 text-sm">
-              <input type="checkbox" ${i.active ? "checked": ""} data-active="${i.id}" class="accent-sky"> active
-            </label>
-          </td>
-          <td class="py-2">${time(i.created_at)}</td>
-          <td class="py-2">
-            <button class="btn-ghost" data-save="${i.id}">Save</button>
-            <button class="btn-ghost" data-peers="${i.id}">Peers</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      $$("button[data-save]").forEach(btn => {
-        btn.onclick = async () => {
-          const id = btn.getAttribute("data-save");
-          const daily  = document.querySelector(`input[data-inbox="${id}"]`).value;
-          const active = document.querySelector(`input[data-active="${id}"]`).checked;
-          await api(`/inboxes/${id}`, { method:"PATCH", body: JSON.stringify({ daily_target: Number(daily), active }) });
-          alert("Updated.");
-        };
-      });
-
-      $$("button[data-peers]").forEach(btn => {
-        btn.onclick = async () => {
-          const id = btn.getAttribute("data-peers");
-          const peers = await api(`/peers?inbox_id=${encodeURIComponent(id)}`);
-          const emails = peers.map(p => `${p.email} (${p.weight})`).join("\n") || "(none)";
-          const newPeer = prompt(`Peers for ${id}:\n\n${emails}\n\nAdd new peer email (or leave blank):`);
-          if (newPeer && newPeer.includes("@")) {
-            await api("/peers", { method:"POST", body: JSON.stringify({ inbox_id: id, peer_email: newPeer, weight: 1 }) });
-            alert("Peer added.");
-          }
-        };
-      });
-    }
-    $("#reloadInboxes").onclick = renderInboxes;
-
-    $("#addInbox").onclick = async () => {
-      const payload = {
-        label: $("#addLabel").value.trim(),
-        provider: $("#addProvider").value,
-        daily_target: Number($("#addDaily").value || 20),
-        smtp_host: $("#smtpHost").value.trim(),
-        smtp_port: Number($("#smtpPort").value || 587),
-        smtp_user: $("#smtpUser").value.trim(),
-        smtp_pass: $("#smtpPass").value.trim(),
-        use_tls: $("#useTLS").checked,
-        imap_host: $("#imapHost").value.trim(),
-        imap_port: Number($("#imapPort").value || 993),
-        imap_user: $("#imapUser").value.trim(),
-        imap_pass: $("#imapPass").value.trim(),
-        use_ssl: $("#useSSL").checked
-      };
-      if (!payload.label || !payload.smtp_user || !payload.imap_user) { alert("Please fill at least label, smtp_user and imap_user."); return; }
-      await api("/inboxes", { method:"POST", body: JSON.stringify(payload) });
-      await renderInboxes(); alert("Inbox created.");
-    };
-
-    // ---------- logs ----------
-    async function loadLogs() {
-      const id = $("#filterInboxId").value.trim();
-      const lim = Number($("#limitLogs").value || 50);
-      const q = new URLSearchParams(); q.set("limit", lim); if (id) q.set("inbox_id", id);
-      const rows = await api(`/send-logs?${q.toString()}`);
-      const tbody = $("#logRows"); tbody.innerHTML = "";
-      rows.forEach(r => {
-        const tr = document.createElement("tr");
-        tr.className = "border-t border-white/10";
-        tr.innerHTML = `
-          <td class="py-2">${time(r.sent_at)}</td>
-          <td class="py-2 text-white/70">${fmt(r.inbox_id)}</td>
-          <td class="py-2">${fmt(r.to_email)}</td>
-          <td class="py-2">${fmt(r.subject)}</td>
-          <td class="py-2">${r.success ? '<span class="text-green-400">OK</span>' : '<span class="text-red-400">FAIL</span>'}</td>
-          <td class="py-2 text-white/50">${fmt(r.error)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-    $("#loadLogs").onclick = loadLogs;
-
-    // ---------- settings ----------
-    $("#runNow").onclick = async () => { await api("/run-now", { method:"POST" }); alert("Worker executed."); };
-
-    // ---------- init ----------
-    async function init() {
-      await Promise.all([loadStats(), renderInboxes()]);
-      try { await loadLogs(); } catch {}
-    }
-
-    // Bootstrap: validate stored token or show modal
-    (async function bootstrap() {
-      const t = token();
-      if (!t) { showAuth(false); return; }
-      const ok = await fetch(`${API}/inboxes`, { headers: { "X-Admin-Token": t } });
-      if (ok.status === 200) { hideAuth(); init(); } else { showAuth(true); }
-    })();
-  </script>
-</body>
-</html>
+          <button id="authSubmit"
+                  class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gradient-to-r from-accent to-cyan-500 text-white font-m
