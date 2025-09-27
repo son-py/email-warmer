@@ -103,3 +103,148 @@ def list_inboxes(x_admin_token: str | None = Header(default=None)):
                 "provider": i.provider,
                 "daily_target": i.daily_target,
                 "active": i.active,
+                "created_at": i.created_at.isoformat() if i.created_at else None,
+            } for i in inboxes
+        ]
+    finally:
+        db.close()
+
+@app.post("/inboxes")
+def create_inbox(payload: InboxCreate, x_admin_token: str | None = Header(default=None)):
+    require_admin(x_admin_token)
+    db = SessionLocal()
+    try:
+        i = Inbox(**payload.model_dump())
+        db.add(i)
+        db.commit()
+        db.refresh(i)
+        return {"id": str(i.id), "label": i.label}
+    finally:
+        db.close()
+
+@app.patch("/inboxes/{inbox_id}")
+def update_inbox(inbox_id: str, payload: InboxUpdate, x_admin_token: str | None = Header(default=None)):
+    require_admin(x_admin_token)
+    db = SessionLocal()
+    try:
+        i = db.get(Inbox, inbox_id)
+        if not i:
+            raise HTTPException(404, "Inbox not found")
+        changed = False
+        if payload.daily_target is not None:
+            i.daily_target = int(payload.daily_target)
+            changed = True
+        if payload.active is not None:
+            i.active = bool(payload.active)
+            changed = True
+        if changed:
+            db.commit()
+        return {"ok": True}
+    finally:
+        db.close()
+
+@app.get("/peers")
+def get_peers(inbox_id: str = Query(...), x_admin_token: str | None = Header(default=None)):
+    require_admin(x_admin_token)
+    db = SessionLocal()
+    try:
+        peers = db.execute(select(PeerPool).where(PeerPool.inbox_id == inbox_id)).scalars().all()
+        return [{"email": p.peer_email, "weight": p.weight} for p in peers]
+    finally:
+        db.close()
+
+@app.post("/peers")
+def add_peer(payload: PeerCreate, x_admin_token: str | None = Header(default=None)):
+    require_admin(x_admin_token)
+    db = SessionLocal()
+    try:
+        p = PeerPool(inbox_id=payload.inbox_id, peer_email=payload.peer_email, weight=payload.weight or 1)
+        db.add(p)
+        db.commit()
+        return {"ok": True}
+    finally:
+        db.close()
+
+# --------------------------- Logs & Stats ---------------------------
+@app.get("/send-logs")
+def send_logs(
+    x_admin_token: str | None = Header(default=None),
+    inbox_id: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    require_admin(x_admin_token)
+    db = SessionLocal()
+    try:
+        q = select(SendLog).order_by(desc(SendLog.sent_at)).limit(limit).offset(offset)
+        if inbox_id:
+            q = q.where(SendLog.inbox_id == inbox_id)
+        rows = db.execute(q).scalars().all()
+        return [
+            {
+                "id": r.id,
+                "inbox_id": str(r.inbox_id) if r.inbox_id else None,
+                "to_email": r.to_email,
+                "subject": r.subject,
+                "sent_at": r.sent_at.isoformat() if r.sent_at else None,
+                "success": r.success,
+                "error": r.error,
+                "provider_message_id": r.provider_message_id,
+            } for r in rows
+        ]
+    finally:
+        db.close()
+
+@app.get("/stats")
+def stats(x_admin_token: str | None = Header(default=None)):
+    require_admin(x_admin_token)
+    db = SessionLocal()
+    try:
+        # totals
+        total_inboxes = db.execute(select(func.count(Inbox.id))).scalar() or 0
+        total_sends = db.execute(select(func.count(SendLog.id))).scalar() or 0
+
+        # today counts
+        today = date.today()
+        start = datetime(today.year, today.month, today.day, tzinfo=timezone.utc)
+        sends_today = db.execute(
+            select(func.count(SendLog.id)).where(SendLog.sent_at >= start)
+        ).scalar() or 0
+
+        # per-inbox today
+        per_inbox_today = db.execute(
+            select(SendLog.inbox_id, func.count(SendLog.id))
+            .where(SendLog.sent_at >= start)
+            .group_by(SendLog.inbox_id)
+        ).all()
+        per = [{"inbox_id": str(i or ""), "count": c} for (i, c) in per_inbox_today]
+
+        return {
+            "total_inboxes": total_inboxes,
+            "total_sends": total_sends,
+            "sends_today": sends_today,
+            "per_inbox_today": per
+        }
+    finally:
+        db.close()
+
+# -------------------- Run once (free trigger) -----------------------
+@app.post("/run-now")
+def run_now(x_admin_token: str | None = Header(default=None)):
+    require_admin(x_admin_token)
+    run_once()
+    return {"ok": True}
+
+# --------------- Optional self-scheduler (FREE) ---------------------
+@app.on_event("startup")
+async def _maybe_start_scheduler():
+    if not SELF_SCHEDULER:
+        return
+    async def loop():
+        while True:
+            try:
+                await asyncio.to_thread(run_once)
+            except Exception as e:
+                print("worker error:", e)
+            await asyncio.sleep(SCHEDULE_SECONDS)
+    asyncio.create_task(loop())
