@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Email Warmer • Dashboard</title>
+  <!-- Tailwind via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bg:  { DEFAULT:'#0b0f14', softer:'#0e141b' },
+            card:{ DEFAULT:'#111827' },
+            accent:{ DEFAULT:'#7c3aed' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .tab { display:none; }
+    .tab.active { display:block; }
+    .btn { @apply px-4 py-2 rounded-xl bg-accent text-white hover:opacity-90 transition; }
+    .card { @apply bg-card/80 backdrop-blur border border-white/5 rounded-2xl p-5; }
+    .input { @apply bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-accent/50; }
+    .toggle { @apply relative inline-flex h-6 w-11 items-center rounded-full; }
+  </style>
+</head>
+<body class="bg-bg text-white">
+  <!-- Top bar -->
+  <header class="border-b border-white/5 bg-bg/80 backdrop-blur sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-8 w-8 rounded-xl bg-accent/20 flex items-center justify-center">🔥</div>
+        <h1 class="font-semibold tracking-tight">Email Warmer</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="darkToggle" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs">Toggle theme</button>
+        <input id="tokenInput" type="password" class="input w-56" placeholder="Admin token…" />
+        <button id="saveToken" class="px-3 py-1.5 rounded-xl bg-accent text-xs">Save token</button>
+      </div>
+    </div>
+    <nav class="max-w-7xl mx-auto px-4">
+      <ul class="flex gap-2 pb-2">
+        <li><button data-tab="dash" class="tabbtn px-4 py-2 rounded-xl bg-white/10">Dashboard</button></li>
+        <li><button data-tab="inboxes" class="tabbtn px-4 py-2 rounded-xl hover:bg-white/10">Inboxes</button></li>
+        <li><button data-tab="logs" class="tabbtn px-4 py-2 rounded-xl hover:bg-white/10">Logs</button></li>
+        <li><button data-tab="settings" class="tabbtn px-4 py-2 rounded-xl hover:bg-white/10">Settings</button></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-8">
+
+    <!-- DASHBOARD -->
+    <section id="tab-dash" class="tab active">
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="card"><div class="text-white/60 text-xs">Total inboxes</div><div id="stat-inboxes" class="text-3xl font-semibold mt-1">—</div></div>
+        <div class="card"><div class="text-white/60 text-xs">Sends today</div><div id="stat-today" class="text-3xl font-semibold mt-1">—</div></div>
+        <div class="card"><div class="text-white/60 text-xs">All-time sends</div><div id="stat-total" class="text-3xl font-semibold mt-1">—</div></div>
+      </div>
+
+      <div class="card mt-6">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-medium">Per-inbox (today)</h2>
+          <button id="refreshStats" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs">Refresh</button>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="text-white/60">
+            <tr><th class="text-left py-2">Inbox ID</th><th class="text-left py-2">Count</th></tr>
+          </thead>
+          <tbody id="perInboxToday"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- INBOXES -->
+    <section id="tab-inboxes" class="tab">
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="card md:col-span-2">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-medium">Connected Inboxes</h2>
+            <button id="reloadInboxes" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs">Reload</button>
+          </div>
+          <table class="w-full text-sm">
+            <thead class="text-white/60">
+              <tr>
+                <th class="text-left py-2">Label</th>
+                <th class="text-left py-2">Daily target</th>
+                <th class="text-left py-2">Active</th>
+                <th class="text-left py-2">Created</th>
+                <th class="text-left py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inboxTable"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h2 class="font-medium mb-3">Add Inbox</h2>
+          <div class="space-y-2">
+            <input id="addLabel" class="input w-full" placeholder="Label (email address)" />
+            <select id="addProvider" class="input w-full">
+              <option value="smtp">SMTP</option>
+            </select>
+            <input id="addDaily" class="input w-full" type="number" value="20" min="1" placeholder="Daily target" />
+            <div class="grid grid-cols-2 gap-2">
+              <input id="smtpHost" class="input" placeholder="SMTP host (smtp.office365.com)" />
+              <input id="smtpPort" class="input" type="number" placeholder="587" />
+              <input id="smtpUser" class="input" placeholder="SMTP user" />
+              <input id="smtpPass" class="input" placeholder="SMTP pass" />
+              <label class="flex items-center gap-2"><input id="useTLS" type="checkbox" checked> <span class="text-sm">Use TLS</span></label>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="imapHost" class="input" placeholder="IMAP host (outlook.office365.com)" />
+              <input id="imapPort" class="input" type="number" placeholder="993" />
+              <input id="imapUser" class="input" placeholder="IMAP user" />
+              <input id="imapPass" class="input" placeholder="IMAP pass" />
+              <label class="flex items-center gap-2"><input id="useSSL" type="checkbox" checked> <span class="text-sm">Use SSL</span></label>
+            </div>
+            <button id="addInbox" class="btn w-full">Create</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOGS -->
+    <section id="tab-logs" class="tab">
+      <div class="card">
+        <div class="flex items-center gap-3 mb-4">
+          <input id="filterInboxId" class="input w-72" placeholder="Filter by inbox_id (optional)" />
+          <input id="limitLogs" class="input w-24" type="number" value="50" />
+          <button id="loadLogs" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs">Load</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="text-white/60">
+              <tr>
+                <th class="text-left py-2">Time</th>
+                <th class="text-left py-2">Inbox</th>
+                <th class="text-left py-2">To</th>
+                <th class="text-left py-2">Subject</th>
+                <th class="text-left py-2">Status</th>
+                <th class="text-left py-2">Error</th>
+              </tr>
+            </thead>
+            <tbody id="logRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="tab-settings" class="tab">
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="card">
+          <h2 class="font-medium mb-2">Admin Actions</h2>
+          <p class="text-white/60 text-sm mb-3">Trigger the worker immediately.</p>
+          <button id="runNow" class="btn">Run Now</button>
+        </div>
+
+        <div class="card">
+          <h2 class="font-medium mb-2">Tips</h2>
+          <ul class="list-disc list-inside text-white/70 text-sm space-y-1">
+            <li>Start with 10–20 emails/day per inbox; ramp gradually.</li>
+            <li>Use inboxes you control; add 2–5 peers for natural traffic.</li>
+            <li>Use the Logs tab to confirm sends/replies/star events.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // ------------------ helpers ------------------
+    const API = window.location.origin;
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+    const fmt = (s) => s ?? "";
+    const time = (iso) => iso ? new Date(iso).toLocaleString() : "";
+
+    function token() {
+      return localStorage.getItem("APP_ADMIN_TOKEN") || "";
+    }
+    function setToken(v) {
+      localStorage.setItem("APP_ADMIN_TOKEN", v || "");
+    }
+    async function api(path, opts={}) {
+      const headers = Object.assign({"Content-Type":"application/json","X-Admin-Token": token()}, opts.headers || {});
+      const res = await fetch(path.startsWith("http") ? path : `${API}${path}`, Object.assign({}, opts, {headers}));
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    // ------------------ theme/token ------------------
+    $("#darkToggle").onclick = () => document.documentElement.classList.toggle("dark");
+    $("#tokenInput").value = token();
+    $("#saveToken").onclick = () => {
+      setToken($("#tokenInput").value.trim());
+      alert("Token saved.");
+    };
+
+    // ------------------ tabs ------------------
+    $$(".tabbtn").forEach(btn => btn.onclick = () => {
+      const t = btn.dataset.tab;
+      $$(".tabbtn").forEach(b => b.classList.remove("bg-white/10"));
+      btn.classList.add("bg-white/10");
+      $$(".tab").forEach(el => el.classList.remove("active"));
+      $(`#tab-${t}`).classList.add("active");
+    });
+
+    // ------------------ dashboard ------------------
+    async function loadStats() {
+      try {
+        const data = await api("/stats");
+        $("#stat-inboxes").textContent = data.total_inboxes;
+        $("#stat-today").textContent   = data.sends_today;
+        $("#stat-total").textContent   = data.total_sends;
+        const tbody = $("#perInboxToday");
+        tbody.innerHTML = "";
+        data.per_inbox_today.forEach(row => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td class="py-2">${fmt(row.inbox_id)}</td><td class="py-2">${row.count}</td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error(e);
+        alert("Failed loading stats. Check token.");
+      }
+    }
+    $("#refreshStats").onclick = loadStats;
+
+    // ------------------ inboxes ------------------
+    async function renderInboxes() {
+      const rows = await api("/inboxes");
+      const tbody = $("#inboxTable");
+      tbody.innerHTML = "";
+      rows.forEach(i => {
+        const tr = document.createElement("tr");
+        tr.className = "border-t border-white/5";
+        tr.innerHTML = `
+          <td class="py-2">${fmt(i.label)}</td>
+          <td class="py-2">
+            <input type="number" value="${i.daily_target}" min="1" class="input w-24" data-inbox="${i.id}" />
+          </td>
+          <td class="py-2">
+            <label class="inline-flex items-center gap-2 text-sm">
+              <input type="checkbox" ${i.active ? "checked": ""} data-active="${i.id}"> active
+            </label>
+          </td>
+          <td class="py-2">${time(i.created_at)}</td>
+          <td class="py-2">
+            <button class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs" data-save="${i.id}">Save</button>
+            <button class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs" data-peers="${i.id}">Peers</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Save handlers
+      $$("button[data-save]").forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.getAttribute("data-save");
+          const daily = document.querySelector(`input[data-inbox="${id}"]`).value;
+          const active = document.querySelector(`input[data-active="${id}"]`).checked;
+          await api(`/inboxes/${id}`, { method:"PATCH", body: JSON.stringify({ daily_target: Number(daily), active }) });
+          alert("Updated.");
+        };
+      });
+
+      // Peer viewer
+      $$("button[data-peers]").forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.getAttribute("data-peers");
+          const peers = await api(`/peers?inbox_id=${encodeURIComponent(id)}`);
+          const emails = peers.map(p => `${p.email} (${p.weight})`).join("\n") || "(none)";
+          const newPeer = prompt(`Peers for ${id}:\n\n${emails}\n\nAdd new peer email (or leave blank):`);
+          if (newPeer && newPeer.includes("@")) {
+            await api("/peers", { method:"POST", body: JSON.stringify({ inbox_id: id, peer_email: newPeer, weight: 1 }) });
+            alert("Peer added.");
+          }
+        };
+      });
+    }
+    $("#reloadInboxes").onclick = renderInboxes;
+
+    $("#addInbox").onclick = async () => {
+      const payload = {
+        label: $("#addLabel").value.trim(),
