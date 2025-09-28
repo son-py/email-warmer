@@ -2,638 +2,672 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Email Warmer</title>
 
-<!-- ====== DARK THEME ====== -->
 <style>
-:root{
-  --bg:#0b1220;
-  --panel:#0f172a;
-  --panel-2:#0e1422;
-  --muted:#98a2c3;
-  --muted-2:#7e8bb0;
-  --text:#e7edff;
-  --accent:#6b5cff;
-  --accent-2:#4bb3ff;
-  --ok:#22c55e;
-  --warn:#f59e0b;
-  --err:#ef4444;
-  --line:#203054;
-  --pill:#141c2e;
-  --input:#0f1627;
-  --input-br:#233052;
-}
-*{ box-sizing:border-box }
-html,body{ height:100% }
-body{
-  margin:0; background: radial-gradient(1200px 700px at -10% -20%, #13203c 0%, transparent 55%) no-repeat,
-              linear-gradient(#0a1120,#080e1a);
-  color:var(--text); font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
-}
+  :root{
+    --bg-900:#0a0f1a;       /* deep navy */
+    --bg-850:#0d1322;
+    --bg-800:#111827;       /* slate-900 */
+    --bg-750:#141c2a;
+    --bg-700:#162036;
+    --panel:#0f172a;        /* slate-900 */
+    --ink:#e5e7eb;          /* slate-200 */
+    --ink-dim:#cbd5e1;      /* slate-300 */
+    --muted:#94a3b8;        /* slate-400 */
+    --accent:#60a5fa;       /* blue-400 */
+    --accent-2:#8b5cf6;     /* violet-500 */
+    --accent-3:#06b6d4;     /* cyan-500 */
+    --danger:#ef4444;
+    --success:#22c55e;
+    --warning:#f59e0b;
 
-/* ====== LAYOUT ====== */
-.header{
-  padding:28px 18px 16px; position:sticky; top:0; z-index:10;
-  background: linear-gradient(180deg, rgba(10,16,28,.95), rgba(10,16,28,.75), transparent);
-  backdrop-filter: blur(6px);
-  border-bottom: 1px solid rgba(40,58,95,.35);
-}
-.container{ max-width:1100px; margin:0 auto; padding:0 14px 40px }
-.brand{
-  display:flex; align-items:center; gap:14px;
-}
-.brand .logo{
-  width:42px; height:42px; border-radius:12px;
-  background: linear-gradient(135deg,var(--accent),var(--accent-2));
-  display:grid; place-items:center; font-weight:900; color:white; letter-spacing:.5px;
-  box-shadow: 0 10px 24px rgba(75,100,255,.25);
-}
-.brand h1{
-  font-size: clamp(22px, 3.2vw, 30px);
-  margin:0; letter-spacing:.3px;
-}
-.brand small{ color:var(--muted); display:block; margin-top:2px }
+    --input:#1f2937;        /* slate-800 */
+    --input-brd:#334155;    /* slate-700 */
+    --input-focus:#3b82f6;  /* blue-500 */
 
-/* NAV */
-.nav{
-  margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;
-}
-.tab{
-  cursor:pointer; user-select:none;
-  padding:10px 14px; border-radius:12px;
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg,var(--panel),#0c1426);
-  color: var(--text); letter-spacing:.2px;
-  transition: .16s ease;
-}
-.tab:hover{ transform:translateY(-1px); filter:brightness(1.06); border-color:#2a3a61; }
-.tab.active{
-  background: linear-gradient(90deg,var(--accent),var(--accent-2));
-  border-color:transparent; color:#fff; font-weight:600;
-}
+    --card-hover:#0b1222;
+    --tab-hover:#17213a;
+    --shadow: 0 10px 25px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+    --radius: 16px;
+  }
 
-/* PANELS */
-.section{ display:none; margin-top:18px; }
-.section.show{ display:block; }
-.card{
-  background: linear-gradient(180deg,var(--panel-2),var(--panel));
-  border: 1px solid var(--line); border-radius:18px; padding:16px;
-  box-shadow: 0 8px 28px rgba(0,0,0,.25);
-}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:radial-gradient(1200px 700px at 20% -10%,#0b1530 0%,#0a0f1a 60%,#070b13 100%);
+    color:var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  }
 
-/* GRID */
-.grid{ display:grid; gap:14px }
-@media (min-width: 900px){ .grid-2{ grid-template-columns: 1.2fr .9fr } }
+  .container{max-width:1100px;margin:0 auto;padding:28px 18px 80px}
 
-/* TABLE */
-.table{ width:100%; border-collapse:separate; border-spacing:0; }
-.table th, .table td{ padding:10px 12px; border-bottom:1px solid #1e2a49; text-align:left; }
-.table th{ color:var(--muted); font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.4px }
-.badge{ color:#bcd3ff; font-size:12px }
+  /* Header */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin-bottom:20px;
+  }
+  .title{
+    font-size: clamp(28px, 4.2vw, 44px);
+    font-weight:800; letter-spacing:.3px; line-height:1.05;
+    background: linear-gradient(90deg,#a5b4fc 0%,#93c5fd 35%,#67e8f9 70%,#c084fc 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow: 0 6px 30px rgba(99,102,241,.15);
+  }
+  .title small{
+    display:block; font-size:.48em; font-weight:500; color:var(--muted); margin-top:6px
+  }
 
-/* INPUTS + BUTTONS */
-.input{
-  width:100%; background:var(--input); color:var(--text);
-  border:1px solid var(--input-br); border-radius:12px; padding:10px 12px; outline:none;
-}
-.input::placeholder{ color:var(--muted-2) }
-.input:focus{ border-color:#4b64ff; box-shadow: 0 0 0 3px rgba(75,100,255,.18); }
+  /* Action cluster */
+  .actions{display:flex; gap:10px; align-items:center}
+  .icon-btn{
+    background:var(--bg-800); border:1px solid var(--input-brd); color:var(--ink);
+    padding:10px 12px; border-radius:12px; cursor:pointer; line-height:0;
+    transition:.2s ease; box-shadow:var(--shadow);
+  }
+  .icon-btn:hover{transform:translateY(-1px); border-color:var(--accent)}
+  .btn{
+    border:none; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700;
+    transition: .15s ease; letter-spacing:.2px;
+  }
+  .btn-primary{
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+    color:#0b1020; box-shadow:0 10px 20px rgba(96,165,250,.25);
+  }
+  .btn-primary:hover{filter:brightness(1.05); transform:translateY(-1px)}
+  .btn-ghost{
+    background:var(--bg-800); color:var(--ink); border:1px solid var(--input-brd)
+  }
+  .btn-ghost:hover{border-color:var(--accent); transform:translateY(-1px)}
 
-.row{ display:flex; gap:12px }
-.row > *{ flex:1 }
+  /* Tabs */
+  .tabs{display:grid;grid-template-columns:repeat(5,1fr); gap:12px; margin:14px 0 22px}
+  .tab{
+    background: linear-gradient(180deg, var(--bg-850), var(--bg-750));
+    border:1px solid var(--input-brd); border-radius:14px; padding:12px 14px; text-align:center;
+    font-weight:700; color:var(--ink-dim); cursor:pointer; transition:.18s ease; box-shadow:var(--shadow)
+  }
+  .tab:hover{background:var(--tab-hover); color:#fff; border-color:var(--accent)}
+  .tab.active{
+    background: linear-gradient(180deg, #0e1b33, #0b1530);
+    color:#eaf2ff; border-color: #3b82f6;
+    box-shadow: 0 10px 20px rgba(59,130,246,.15), inset 0 1px 0 rgba(255,255,255,.05);
+  }
 
-.checkbox{ display:flex; align-items:center; gap:10px; color:var(--muted) }
+  /* Panels */
+  .panel{
+    background: linear-gradient(180deg, var(--bg-850), var(--bg-800));
+    border:1px solid var(--input-brd);
+    border-radius: var(--radius);
+    padding:18px;
+    box-shadow:var(--shadow);
+  }
+  .grid-2{display:grid; grid-template-columns: 1fr 1fr; gap:16px}
+  .grid-3{display:grid; grid-template-columns: repeat(3, 1fr); gap:16px}
+  .grid-4{display:grid; grid-template-columns: repeat(4, 1fr); gap:16px}
+  .mt{margin-top:16px}
 
-.btn{
-  background:#111a2b; border:1px solid #2a3454; color:#dbe6ff;
-  padding:10px 14px; border-radius:12px; cursor:pointer; transition:.15s;
-}
-.btn:hover{ background:#151f33 }
-.btn-primary{
-  background: linear-gradient(90deg,var(--accent),var(--accent-2));
-  border-color: transparent; color:white; font-weight:600;
-}
-.btn-primary:hover{ filter:brightness(1.05) }
-.btn-ghost{
-  background: transparent; border:1px solid #27324c; color:#c7d2ff;
-  padding:8px 12px; border-radius:10px; line-height:1; cursor:pointer;
-}
-.btn-ghost:hover{ background:#131b2b; }
+  .metric{
+    background: linear-gradient(180deg, #0c1730, #0b1428);
+    border:1px solid var(--input-brd); border-radius:14px; padding:14px 16px;
+  }
+  .metric .k{font-size:22px; font-weight:800}
+  .metric .l{font-size:12px; color:var(--muted)}
 
-/* STATUS DOTS */
-.dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px }
-.ok{ background:var(--ok) } .warn{ background:var(--warn) } .err{ background:var(--err) }
+  /* Inputs */
+  .row{display:grid; grid-template-columns:repeat(2,1fr); gap:12px}
+  .row3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+  .row4{display:grid; grid-template-columns:repeat(4,1fr); gap:12px}
 
-/* TOASTS */
-.toast-wrap{ position: fixed; right:14px; bottom:14px; display:grid; gap:10px; z-index:80 }
-.toast{
-  padding:12px 14px; border-radius:12px; color:#fff; font-weight:600;
-  border:1px solid rgba(255,255,255,.12); backdrop-filter: blur(4px);
-  animation: raise .2s ease-out;
-}
-.toast.ok{ background: linear-gradient(180deg,#22c55e,#168a3e) }
-.toast.err{ background: linear-gradient(180deg,#ef4444,#b91c1c) }
-.toast.info{ background: linear-gradient(180deg,#475569,#1f2937) }
-@keyframes raise{ from{ transform:translateY(6px); opacity: .5 } to{ transform:none; opacity:1 } }
+  label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block}
+  input[type="text"], input[type="number"], input[type="password"]{
+    width:100%; background:var(--input); color:var(--ink);
+    border:1px solid var(--input-brd); border-radius:12px; padding:10px 12px;
+    outline:none; transition:.15s ease;
+  }
+  input::placeholder{color:#9fb3cc}
+  input:focus{border-color:var(--input-focus); box-shadow:0 0 0 3px rgba(59,130,246,.25)}
+  .chk{display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--bg-800); border:1px solid var(--input-brd); border-radius:12px}
+  .split{display:flex; gap:10px; align-items:center}
 
-/* TOKEN OVERLAY */
-.gate{
-  position:fixed; inset:0; background: radial-gradient(800px 500px at 70% -10%, rgba(107,92,255,.16), transparent) no-repeat,
-                                rgba(9,14,26,.85);
-  display:grid; place-items:center; z-index:100;
-}
-.gate .panel{
-  width:min(520px, 92vw); padding:18px; border-radius:18px;
-  background: linear-gradient(180deg,var(--panel-2),var(--panel));
-  border:1px solid var(--line); box-shadow: 0 20px 50px rgba(0,0,0,.45);
-}
-.gate h2{ margin:0 0 6px; font-size:22px }
-.gate p{ margin:0 0 12px; color:var(--muted) }
-.gate .row{ margin-top:10px }
-.err-text{ color:#ffb4b4; font-size:13px; min-height:18px }
+  /* Tables */
+  table{width:100%; border-collapse:separate; border-spacing:0 10px}
+  thead th{font-size:12px; color:var(--muted); font-weight:600; text-align:left; padding:0 10px}
+  tbody tr{background: linear-gradient(180deg, #0d1629, #0b1424); border:1px solid var(--input-brd)}
+  tbody td{padding:14px 10px; border-top:1px solid var(--input-brd); border-bottom:1px solid var(--input-brd)}
+  tbody tr td:first-child{border-left:1px solid var(--input-brd); border-top-left-radius:12px; border-bottom-left-radius:12px}
+  tbody tr td:last-child{border-right:1px solid var(--input-brd); border-top-right-radius:12px; border-bottom-right-radius:12px}
 
-/* DASH CARDS */
-.kpis{ display:grid; grid-template-columns: repeat(3,1fr); gap:12px }
-.kpi{ padding:14px; border:1px solid var(--line); border-radius:16px; background: linear-gradient(180deg,#0f162a,#0e1424) }
-.kpi .n{ font-size:26px; font-weight:800 }
-.kpi .t{ color:var(--muted); text-transform:uppercase; font-size:12px; letter-spacing:.4px }
+  /* Toasts */
+  .toast-wrap{position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:10px; z-index:1200}
+  .toast{
+    background:#0b1322; color:#eaf2ff; border:1px solid var(--input-brd);
+    padding:12px 14px; border-radius:12px; min-width:240px; box-shadow:var(--shadow);
+  }
+  .toast.ok{border-color:rgba(34,197,94,.6)}
+  .toast.err{border-color:rgba(239,68,68,.6)}
 
-/* PEERS MODAL */
-.modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 90; }
-.modal.show { display: flex; }
-.modal::before { content:""; position:absolute; inset:0; background:rgba(8,12,20,.72); backdrop-filter: blur(6px); }
-.modal-card {
-  position: relative; width: min(680px, 92vw);
-  background: linear-gradient(180deg,#0e1422,#0c1220);
-  border: 1px solid #1f2a44; border-radius: 18px;
-  box-shadow: 0 10px 32px rgba(0,0,0,.45);
-  color: #e6ecff;
-  padding: 18px 18px 14px;
-  animation: pop .16s ease-out;
-}
-@keyframes pop { from { transform: translateY(8px) scale(.98); opacity: .6 } to { transform: none; opacity: 1 } }
-.modal-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
-.modal-head h3 { font-size: 20px; font-weight: 700; letter-spacing:.2px; }
-.peer-list { display:flex; flex-wrap:wrap; gap:8px; padding:6px 2px 2px; min-height:38px; }
-.pill { padding:6px 10px; border-radius:999px; font-size:13px; background: var(--pill); border:1px solid #243252; color:#cfe1ff; }
-.peer-add { display:flex; gap:10px; margin-top:14px; }
-.modal-foot { display:flex; justify-content:flex-end; margin-top:14px; }
+  /* Modals */
+  .modal-mask{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:1100}
+  .modal{
+    width:min(560px, 94vw);
+    background: linear-gradient(180deg, var(--bg-850), var(--bg-800));
+    border:1px solid var(--input-brd); border-radius:16px; padding:18px; box-shadow:var(--shadow)
+  }
+  .modal h3{margin:0 0 10px 0}
+  .modal .muted{color:var(--muted); font-size:13px; margin-bottom:12px}
 
-/* UTIL */
-.muted{ color:var(--muted) }
-.space{ height:4px }
-.center{ display:flex; align-items:center; justify-content:center }
-.right{ text-align:right }
+  /* Spinner overlay (add-on) */
+  #spinnerOverlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    display: none; align-items: center; justify-content: center; z-index: 1200;
+  }
+  .spinner {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 4px solid rgba(255,255,255,.25);
+    border-top-color: #7c9bff;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Utilities */
+  .muted{color:var(--muted)}
+  .right{margin-left:auto}
+  .wrap{display:flex;flex-wrap:wrap; gap:10px}
+  .tag{
+    background:#0e1b33; border:1px solid #1f2d4d; border-radius:999px; padding:6px 10px; font-size:12px; color:#cfe3ff
+  }
+
+  @media (max-width:960px){
+    .tabs{grid-template-columns:repeat(2,1fr)}
+    .grid-3,.grid-4{grid-template-columns:1fr}
+    .row,.row3,.row4{grid-template-columns:1fr}
+  }
 </style>
 </head>
-
 <body>
-  <header class="header">
-    <div class="container">
-      <div class="brand">
-        <div class="logo">EW</div>
-        <div>
-          <h1>Email Warmer</h1>
-          <small>Warm up and monitor your sender reputation.</small>
-        </div>
-      </div>
-      <nav class="nav" id="tabs">
-        <div class="tab active" data-tab="dash">Dashboard</div>
-        <div class="tab" data-tab="inboxes">Inboxes</div>
-        <div class="tab" data-tab="logs">Logs</div>
-        <div class="tab" data-tab="settings">Settings</div>
-      </nav>
+<div class="container">
+
+  <div class="topbar">
+    <div>
+      <div class="title">Email Warmer</div>
+      <small class="muted">Warm up deliverability with natural two-way sending</small>
     </div>
-  </header>
-
-  <main class="container">
-    <!-- DASHBOARD -->
-    <section id="sec-dash" class="section show">
-      <div class="kpis">
-        <div class="kpi"><div class="n" id="kpi-inboxes">0</div><div class="t">Connected</div></div>
-        <div class="kpi"><div class="n" id="kpi-active">0</div><div class="t">Active</div></div>
-        <div class="kpi"><div class="n" id="kpi-target">0</div><div class="t">Daily Target</div></div>
-      </div>
-      <div class="space"></div>
-      <div class="card">
-        <div class="row" style="align-items:center">
-          <div class="muted">Quick actions</div>
-          <div class="right" style="flex:1"></div>
-          <button class="btn" id="btn-refresh-all">Refresh</button>
-          <button class="btn-primary" id="btn-run-now">Run Now</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- INBOXES -->
-    <section id="sec-inboxes" class="section">
-      <div class="grid grid-2">
-        <div class="card">
-          <div class="row" style="align-items:center; margin-bottom:8px">
-            <h3 style="margin:0">Connected Inboxes</h3>
-            <div style="flex:1"></div>
-            <button class="btn" id="btn-reload">Reload</button>
-          </div>
-
-          <table class="table" id="ibox-table">
-            <thead>
-              <tr>
-                <th>Label</th><th>Daily target</th><th>Active</th><th>Created</th><th class="right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="ibox-body"></tbody>
-          </table>
-        </div>
-
-        <div class="card">
-          <h3 style="margin-top:0">Add Inbox</h3>
-
-          <div class="row">
-            <div>
-              <label class="muted">Label (email address)</label>
-              <input id="f-label" class="input" placeholder="inbox@example.com">
-            </div>
-            <div>
-              <label class="muted">Daily target</label>
-              <input id="f-target" class="input" type="number" min="1" value="10">
-            </div>
-          </div>
-
-          <div style="margin-top:10px">
-            <label class="muted">Provider</label>
-            <select id="f-provider" class="input">
-              <option value="smtp" selected>SMTP</option>
-              <option value="outlook">Outlook (manual SMTP/IMAP)</option>
-              <option value="gmail" disabled>Gmail (use App Password)</option>
-            </select>
-          </div>
-
-          <h4 class="muted" style="margin:14px 0 6px">SMTP</h4>
-          <div class="row">
-            <input id="f-smtp-host" class="input" placeholder="smtp.office365.com">
-            <input id="f-smtp-port" class="input" placeholder="587" value="587">
-          </div>
-          <div class="row" style="margin-top:10px">
-            <input id="f-smtp-user" class="input" placeholder="SMTP user (full email)">
-            <input id="f-smtp-pass" class="input" placeholder="SMTP pass / app password" type="password">
-          </div>
-          <label class="checkbox" style="margin-top:8px">
-            <input id="f-smtp-tls" type="checkbox" checked>
-            <span>Use TLS (STARTTLS)</span>
-          </label>
-
-          <h4 class="muted" style="margin:14px 0 6px">IMAP</h4>
-          <div class="row">
-            <input id="f-imap-host" class="input" placeholder="outlook.office365.com">
-            <input id="f-imap-port" class="input" placeholder="993" value="993">
-          </div>
-          <div class="row" style="margin-top:10px">
-            <input id="f-imap-user" class="input" placeholder="IMAP user (full email)">
-            <input id="f-imap-pass" class="input" placeholder="IMAP pass / app password" type="password">
-          </div>
-          <label class="checkbox" style="margin-top:8px">
-            <input id="f-imap-ssl" type="checkbox" checked>
-            <span>Use SSL</span>
-          </label>
-
-          <div class="center" style="margin-top:16px">
-            <button class="btn-primary" id="btn-create">Create</button>
-          </div>
-          <div id="create-err" class="err-text"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- LOGS -->
-    <section id="sec-logs" class="section">
-      <div class="card">
-        <div class="row" style="align-items:center; margin-bottom:8px">
-          <h3 style="margin:0">Recent send logs</h3>
-          <div style="flex:1"></div>
-          <button class="btn" id="btn-logs-reload">Reload</button>
-        </div>
-        <div id="logs-area" style="white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#0a1020; border:1px solid #1c2847; border-radius:12px; padding:12px; min-height:180px; color:#d7e2ff"></div>
-      </div>
-    </section>
-
-    <!-- SETTINGS -->
-    <section id="sec-settings" class="section">
-      <div class="grid">
-        <div class="card">
-          <h3 style="margin-top:0">Admin</h3>
-          <div class="row">
-            <button class="btn-primary" id="btn-run-now-2">Run Now</button>
-            <button class="btn" id="btn-change-token">Change Admin Token</button>
-          </div>
-          <p class="muted" style="margin-top:8px">
-            “Run Now” executes one warm-up pass immediately. Token is sent as <code>X-Admin-Token</code>.
-          </p>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- Toasts -->
-  <div class="toast-wrap" id="toasts"></div>
-
-  <!-- Token Gate -->
-  <div class="gate" id="gate" style="display:none">
-    <div class="panel">
-      <h2>Enter admin access token</h2>
-      <p>This site is protected. Provide the server’s <code>X-Admin-Token</code> to continue.</p>
-      <div class="row">
-        <input id="gate-token" class="input" placeholder="Enter token…">
-        <button id="gate-continue" class="btn-primary">Continue</button>
-      </div>
-      <div id="gate-err" class="err-text"></div>
-      <p class="muted" style="margin-top:8px">Tip: you can change this later in <b>Settings → Change Admin Token</b>.</p>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-run-now">Run now</button>
+      <button class="icon-btn" id="btn-token" title="Set admin token" aria-label="Set admin token">🔒</button>
     </div>
   </div>
 
-  <!-- Peers Modal -->
-  <div id="peerModal" class="modal" aria-hidden="true">
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="peerTitle">
-      <div class="modal-head">
-        <h3 id="peerTitle">Peers</h3>
-        <button class="btn-ghost" id="peerClose">&times;</button>
-      </div>
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-tab="dashboard">Dashboard</div>
+    <div class="tab" data-tab="inboxes">Inboxes</div>
+    <div class="tab" data-tab="peers">Peers</div>
+    <div class="tab" data-tab="logs">Logs</div>
+    <div class="tab" data-tab="settings">Settings</div>
+  </div>
 
-      <div class="peer-list" id="peerList">
-        <div class="muted">Loading peers…</div>
-      </div>
+  <!-- DASHBOARD -->
+  <section class="panel" id="view-dashboard">
+    <div class="grid-4">
+      <div class="metric"><div class="k" id="m-inboxes">0</div><div class="l">Inboxes</div></div>
+      <div class="metric"><div class="k" id="m-active">0</div><div class="l">Active</div></div>
+      <div class="metric"><div class="k" id="m-peers">0</div><div class="l">Peers</div></div>
+      <div class="metric"><div class="k" id="m-senttoday">0</div><div class="l">Sent today</div></div>
+    </div>
+    <div class="mt wrap">
+      <span class="tag">Tip: add at least 2 inboxes and make peers both ways.</span>
+      <span class="tag">Use Outlook: smtp.office365.com : 587 (TLS), imap: outlook.office365.com : 993 (SSL)</span>
+    </div>
+  </section>
 
-      <div class="peer-add">
-        <input id="peerInput" class="input" placeholder="peer@example.com" autocomplete="off">
-        <button id="peerAddBtn" class="btn-primary">Add</button>
-      </div>
+  <!-- INBOXES -->
+  <section class="panel" id="view-inboxes" style="display:none">
+    <h3 style="margin-top:0">Connected inboxes</h3>
+    <div id="inboxes-table-wrap" class="mt"></div>
 
-      <div class="modal-foot">
-        <button class="btn" id="peerCloseBottom">Close</button>
+    <h3 class="mt">Add inbox</h3>
+    <div class="row3">
+      <div>
+        <label>Label (email)</label>
+        <input id="f-label" type="text" placeholder="name@domain.com" />
+      </div>
+      <div>
+        <label>Daily target</label>
+        <input id="f-daily" type="number" min="1" max="200" value="30" />
+      </div>
+      <div class="chk">
+        <input id="f-active" type="checkbox" checked />
+        <label for="f-active" style="margin:0">Active</label>
+      </div>
+    </div>
+
+    <div class="row4 mt">
+      <div>
+        <label>SMTP host</label>
+        <input id="f-smtp-host" type="text" placeholder="smtp.office365.com" />
+      </div>
+      <div>
+        <label>SMTP port</label>
+        <input id="f-smtp-port" type="number" value="587" />
+      </div>
+      <div>
+        <label>SMTP user</label>
+        <input id="f-smtp-user" type="text" placeholder="your email address" />
+      </div>
+      <div>
+        <label>SMTP password</label>
+        <input id="f-smtp-pass" type="password" placeholder="password" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="chk">
+        <input id="f-smtp-tls" type="checkbox" checked />
+        <label for="f-smtp-tls" style="margin:0">Use TLS (STARTTLS)</label>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="row4 mt">
+      <div>
+        <label>IMAP host</label>
+        <input id="f-imap-host" type="text" placeholder="outlook.office365.com" />
+      </div>
+      <div>
+        <label>IMAP port</label>
+        <input id="f-imap-port" type="number" value="993" />
+      </div>
+      <div>
+        <label>IMAP user</label>
+        <input id="f-imap-user" type="text" placeholder="your email address" />
+      </div>
+      <div>
+        <label>IMAP password</label>
+        <input id="f-imap-pass" type="password" placeholder="password" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="chk">
+        <input id="f-imap-ssl" type="checkbox" checked />
+        <label for="f-imap-ssl" style="margin:0">Use SSL</label>
+      </div>
+      <div class="right">
+        <button class="btn btn-primary" id="btn-create-inbox">Create inbox</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PEERS -->
+  <section class="panel" id="view-peers" style="display:none">
+    <h3 style="margin-top:0">Manage peers</h3>
+    <p class="muted">Open the **Peers** dialog from the Inboxes table to add/remove peers per inbox.</p>
+  </section>
+
+  <!-- LOGS -->
+  <section class="panel" id="view-logs" style="display:none">
+    <div class="split">
+      <h3 style="margin-top:0">Send logs</h3>
+      <button class="btn btn-ghost right" id="btn-refresh-logs">Refresh</button>
+    </div>
+    <div id="logs-wrap" class="mt"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="panel" id="view-settings" style="display:none">
+    <h3 style="margin-top:0">Settings</h3>
+    <div class="row">
+      <div>
+        <label>Admin token</label>
+        <div class="split">
+          <input id="token-input" type="text" placeholder="Set X-Admin-Token (stored locally)" />
+          <button class="btn btn-ghost" id="btn-save-token">Save</button>
+        </div>
+        <p class="muted">This token is only stored in your browser and sent as <code>X-Admin-Token</code> for admin endpoints.</p>
+      </div>
+      <div class="right" style="display:flex; align-items:flex-end">
+        <button class="btn btn-primary" id="btn-run-now-2">Run now</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Spinner overlay -->
+<div id="spinnerOverlay"><div class="spinner"></div></div>
+
+<!-- Token Modal -->
+<div class="modal-mask" id="modal-token">
+  <div class="modal">
+    <h3>Enter admin token</h3>
+    <div class="muted">This protects admin actions like creating inboxes and running jobs.</div>
+    <input id="modal-token-input" type="password" placeholder="Paste token" />
+    <div class="split mt">
+      <div></div>
+      <div class="right" style="display:flex; gap:10px">
+        <button class="btn btn-ghost" id="modal-token-cancel">Cancel</button>
+        <button class="btn btn-primary" id="modal-token-save">Save</button>
       </div>
     </div>
   </div>
+</div>
+
+<!-- Peers Modal -->
+<div class="modal-mask" id="modal-peers">
+  <div class="modal">
+    <h3 id="peer-title">Peers</h3>
+    <div class="muted">Add emails this inbox will send to during warm-up.</div>
+    <div id="peer-list" class="mt"></div>
+    <div class="split mt">
+      <input id="peer-input" type="text" placeholder="peer@example.com" style="flex:1" />
+      <button class="btn btn-primary" id="btn-add-peer">Add peer</button>
+    </div>
+    <div class="split mt">
+      <div></div>
+      <button class="btn btn-ghost" id="btn-close-peers">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="toast-wrap" id="toasts"></div>
 
 <script>
-/* ======================= UTILITIES ======================= */
-const $ = sel => document.querySelector(sel);
-const $$ = sel => document.querySelectorAll(sel);
+  // ---------- Helpers ----------
+  const $ = (q, ctx=document)=>ctx.querySelector(q);
+  const $$ = (q, ctx=document)=>Array.from(ctx.querySelectorAll(q));
 
-let ADMIN_TOKEN = localStorage.getItem('X_ADMIN_TOKEN') || '';
-
-function api(path, opts = {}) {
-  const headers = {'Content-Type': 'application/json', ...(opts.headers||{})};
-  if (ADMIN_TOKEN) headers['X-Admin-Token'] = ADMIN_TOKEN;
-  return fetch(path, {...opts, headers});
-}
-function toast(msg, type='info', ms=3000){
-  const wrap = $('#toasts');
-  const d = document.createElement('div');
-  d.className = `toast ${type}`;
-  d.textContent = msg;
-  wrap.appendChild(d);
-  setTimeout(()=>{ d.style.opacity='0'; d.style.transform='translateY(4px)'; }, ms-200);
-  setTimeout(()=>wrap.removeChild(d), ms);
-}
-
-/* ======================= NAV TABS ======================= */
-const tabEls = $$('#tabs .tab');
-tabEls.forEach(t => t.addEventListener('click', () => {
-  tabEls.forEach(x => x.classList.remove('active'));
-  t.classList.add('active');
-  const name = t.dataset.tab;
-  $$('.section').forEach(s => s.classList.remove('show'));
-  $('#sec-'+name).classList.add('show');
-  if (name==='inboxes') loadInboxes();
-  if (name==='logs') loadLogs();
-  if (name==='dash') refreshKPIs();
-}));
-
-/* ======================= TOKEN GATE ======================= */
-async function ensureToken(){
-  if(!ADMIN_TOKEN){ showGate(); return; }
-  // verify by hitting a protected endpoint
-  try{
-    const r = await api('/inboxes');
-    if (r.ok) { $('#gate').style.display='none'; return; }
-    showGate('Invalid token (HTTP '+r.status+')');
-  }catch(e){
-    showGate('Could not reach server');
+  function toast(msg, type='ok', timeout=3500){
+    const wrap = $('#toasts');
+    const el = document.createElement('div');
+    el.className = 'toast ' + (type==='error'?'err':'ok');
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(()=>{ el.style.opacity=.0; setTimeout(()=>wrap.removeChild(el),250); }, timeout);
   }
-}
-function showGate(err){
-  $('#gate').style.display='grid';
-  $('#gate-err').textContent = err || '';
-}
-$('#gate-continue').onclick = async ()=>{
-  const token = $('#gate-token').value.trim();
-  if(!token){ $('#gate-err').textContent='Please enter a token'; return; }
-  ADMIN_TOKEN = token;
-  localStorage.setItem('X_ADMIN_TOKEN', ADMIN_TOKEN);
-  const r = await api('/inboxes');
-  if(r.ok){
-    $('#gate').style.display='none';
-    toast('Token accepted','ok');
-    await refreshAll();
-  }else{
-    $('#gate-err').textContent='Invalid token (HTTP '+r.status+')';
+
+  function showSpinner(on){
+    const el = $('#spinnerOverlay');
+    if (el) el.style.display = on ? 'flex' : 'none';
   }
-};
-$('#btn-change-token').onclick = ()=>{
-  $('#gate-token').value='';
-  showGate();
-};
 
-/* ======================= DASH KPIs ======================= */
-async function refreshKPIs(){
-  try{
-    const [r1, r2] = await Promise.all([api('/inboxes'), api('/stats')]);
-    let ib = [], stats = {};
-    if (r1.ok) ib = await r1.json();
-    if (r2.ok) stats = await r2.json();
-    const active = ib.filter(x => x.active).length;
-    const target = ib.reduce((a,x)=>a+(x.daily_target||0),0);
-    $('#kpi-inboxes').textContent = ib.length;
-    $('#kpi-active').textContent = active;
-    $('#kpi-target').textContent = target;
-  }catch(e){ /* ignore */ }
-}
-$('#btn-refresh-all').onclick = refreshAll;
+  function getToken(){ return localStorage.getItem('admin_token') || ''; }
+  function setToken(v){ localStorage.setItem('admin_token', v || ''); }
 
-/* ======================= INBOXES ======================= */
-async function loadInboxes(){
-  const body = $('#ibox-body');
-  body.innerHTML = '<tr><td colspan="5" class="muted">Loading…</td></tr>';
-  try{
-    const r = await api('/inboxes');
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const data = await r.json();
-    if (data.length === 0){
-      body.innerHTML = '<tr><td colspan="5" class="muted">No inboxes yet.</td></tr>';
-      return;
+  async function apiFetch(path, opts={}){
+    const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+    const token = getToken();
+    if (token) headers['X-Admin-Token'] = token;
+    const res = await fetch(path, Object.assign(opts,{headers}));
+    if (res.status === 401){
+      // prompt for token
+      openTokenModal();
+      throw new Error('Unauthorized (401). Set admin token.');
     }
-    body.innerHTML = '';
-    for(const ib of data){
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${ib.label}</td>
-        <td><input class="input" style="max-width:90px" type="number" min="1" value="${ib.daily_target||10}" data-field="daily_target"></td>
-        <td><label class="checkbox"><input type="checkbox" ${ib.active?'checked':''} data-field="active"><span class="badge">${ib.active?'active':'paused'}</span></label></td>
-        <td>${new Date(ib.created_at||Date.now()).toLocaleString()}</td>
-        <td class="right">
-          <button class="btn" data-act="save">Save</button>
-          <button class="btn" data-act="peers">Peers</button>
-        </td>`;
-      body.appendChild(tr);
-
-      // wire actions
-      tr.querySelector('[data-act="save"]').onclick = async ()=>{
-        const target = tr.querySelector('[data-field="daily_target"]').valueAsNumber || 10;
-        const active = tr.querySelector('[data-field="active"]').checked;
-        const r = await api(`/inboxes/${ib.id}`, {method:'PATCH', body: JSON.stringify({daily_target: target, active})});
-        if(r.ok){ toast('Inbox saved','ok'); refreshKPIs(); } else { toast('Save failed (HTTP '+r.status+')','err'); }
-      };
-      tr.querySelector('[data-act="peers"]').onclick = ()=> openPeers(ib);
-    }
-  }catch(err){
-    body.innerHTML = `<tr><td colspan="5" class="muted">Failed to load inboxes (${err.message})</td></tr>`;
+    return res;
   }
-}
-$('#btn-reload').onclick = loadInboxes;
+  async function safeJson(res){ try{ return await res.json(); }catch{return null;} }
 
-// Create inbox
-$('#btn-create').onclick = async ()=>{
-  $('#create-err').textContent = '';
-  const payload = {
-    label: $('#f-label').value.trim(),
-    daily_target: $('#f-target').valueAsNumber || 10,
-    smtp_host: $('#f-smtp-host').value.trim(),
-    smtp_port: +($('#f-smtp-port').value.trim() || 587),
-    smtp_user: $('#f-smtp-user').value.trim(),
-    smtp_pass: $('#f-smtp-pass').value,
-    use_tls: $('#f-smtp-tls').checked,
-    imap_host: $('#f-imap-host').value.trim(),
-    imap_port: +($('#f-imap-port').value.trim() || 993),
-    imap_user: $('#f-imap-user').value.trim(),
-    imap_pass: $('#f-imap-pass').value,
-    use_ssl: $('#f-imap-ssl').checked,
+  // ---------- Tabs ----------
+  const views = {
+    dashboard: $('#view-dashboard'),
+    inboxes: $('#view-inboxes'),
+    peers: $('#view-peers'),
+    logs: $('#view-logs'),
+    settings: $('#view-settings'),
+  };
+  function showTab(name){
+    $$('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+    Object.entries(views).forEach(([k,el])=> el.style.display = (k===name)?'block':'none');
+    if (name==='inboxes') loadInboxes();
+    if (name==='logs') loadLogs();
+    if (name==='dashboard') loadStats();
+  }
+  $('#tabs').addEventListener('click', (e)=>{
+    const t = e.target.closest('.tab');
+    if (!t) return;
+    showTab(t.dataset.tab);
+  });
+
+  // ---------- Token Modal ----------
+  function openTokenModal(){
+    $('#modal-token').style.display='flex';
+    setTimeout(()=>$('#modal-token-input').focus(), 50);
+  }
+  function closeTokenModal(){ $('#modal-token').style.display='none'; }
+  $('#btn-token').onclick = openTokenModal;
+  $('#modal-token-cancel').onclick = closeTokenModal;
+  $('#modal-token-save').onclick = ()=>{
+    const v = $('#modal-token-input').value.trim();
+    if (!v) return toast('Enter a token', 'error');
+    setToken(v); closeTokenModal(); toast('Token saved');
   };
 
-  if (!payload.label || !payload.smtp_host || !payload.imap_host){
-    $('#create-err').textContent = 'Label, SMTP host and IMAP host are required.'; return;
+  // ---------- Run Now ----------
+  async function runNow(){
+    showSpinner(true);
+    try{
+      const res = await apiFetch('/run-now', {method:'POST'});
+      const data = await safeJson(res);
+      if (!res.ok){
+        const detail = data?.detail || (res.status+' '+res.statusText);
+        toast('Run failed: '+detail, 'error');
+      }else{
+        toast(data?.message || data?.summary || 'Run triggered');
+        await Promise.all([loadLogs(), loadStats()]);
+      }
+    }catch(err){
+      toast(String(err.message||err), 'error');
+    }finally{
+      showSpinner(false);
+    }
   }
-  try{
-    const r = await api('/inboxes', {method:'POST', body:JSON.stringify(payload)});
-    if(!r.ok){ throw new Error('HTTP '+r.status); }
-    toast('Inbox connected','ok');
-    // clear sensitive fields
-    $('#f-smtp-pass').value = ''; $('#f-imap-pass').value='';
-    await loadInboxes(); await refreshKPIs();
-  }catch(e){
-    $('#create-err').textContent = 'Create failed: '+e.message;
-    toast('Create failed','err');
+  $('#btn-run-now').onclick = runNow;
+  $('#btn-run-now-2').onclick = runNow;
+
+  // ---------- Stats ----------
+  async function loadStats(){
+    try{
+      const res = await fetch('/stats');
+      const d = await safeJson(res) || {};
+      $('#m-inboxes').textContent = d.inboxes ?? 0;
+      $('#m-active').textContent = d.active ?? 0;
+      $('#m-peers').textContent = d.peers ?? 0;
+      $('#m-senttoday').textContent = d.sent_today ?? 0;
+    }catch{}
   }
-};
 
-/* ======================= LOGS ======================= */
-async function loadLogs(){
-  const area = $('#logs-area');
-  area.textContent = 'Loading…';
-  try{
-    const r = await api('/send-logs?limit=50');
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const logs = await r.json();
-    area.textContent = (logs && logs.length)
-      ? logs.map(l => typeof l==='string' ? l : JSON.stringify(l)).join('\n')
-      : '(no logs yet)';
-  }catch(e){ area.textContent = 'Failed to load logs: '+e.message; }
-}
-$('#btn-logs-reload').onclick = loadLogs;
-
-/* ======================= RUN NOW ======================= */
-async function runNow(){
-  try{
-    const r = await api('/run-now', {method:'POST'});
-    if(r.ok) toast('Run dispatched','ok'); else toast('Run failed (HTTP '+r.status+')','err');
-  }catch(e){ toast('Run failed: '+e.message,'err'); }
-}
-$('#btn-run-now').onclick = runNow;
-$('#btn-run-now-2').onclick = runNow;
-
-/* ======================= PEERS MODAL ======================= */
-let currentPeerInboxId = null;
-let currentPeerInboxLabel = null;
-
-async function openPeers(inbox) {
-  currentPeerInboxId = inbox.id;
-  currentPeerInboxLabel = inbox.label || inbox.id;
-  $('#peerTitle').textContent = `Peers for ${currentPeerInboxLabel}`;
-  $('#peerInput').value = '';
-  renderPeerList(null); // loading
-  showPeerModal();
-  await reloadPeers();
-}
-function showPeerModal() {
-  const m = $('#peerModal');
-  m.classList.add('show');
-  m.setAttribute('aria-hidden', 'false');
-}
-function closePeerModal() {
-  const m = $('#peerModal');
-  m.classList.remove('show');
-  m.setAttribute('aria-hidden', 'true');
-}
-$('#peerClose').onclick = closePeerModal;
-$('#peerCloseBottom').onclick = closePeerModal;
-$('#peerModal').addEventListener('click', (e)=>{
-  if (e.target.id === 'peerModal') closePeerModal(); // backdrop close
-});
-document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closePeerModal(); });
-
-async function reloadPeers() {
-  try {
-    const r = await api(`/peers?inbox_id=${encodeURIComponent(currentPeerInboxId)}`);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const peers = await r.json();
-    renderPeerList(peers);
-  } catch (err) {
-    renderPeerList([]);
-    toast(`Could not load peers (${err.message})`, 'err');
+  // ---------- Inboxes ----------
+  let inboxCache = [];
+  function inboxRow(inb){
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><div style="font-weight:700">${inb.label||''}</div><div class="muted" style="font-size:12px">${inb.id||''}</div></td>
+      <td><input type="number" min="1" max="200" value="${inb.daily_target??30}" style="width:90px;background:var(--input);color:var(--ink);border:1px solid var(--input-brd);border-radius:10px;padding:8px 10px"></td>
+      <td><label class="chk" style="display:inline-flex"><input type="checkbox" ${inb.active?'checked':''}><span>Active</span></label></td>
+      <td class="split">
+        <button class="btn btn-ghost btn-peers">Peers</button>
+        <span class="right"></span>
+        <button class="btn btn-primary btn-save">Save</button>
+      </td>
+    `;
+    const dailyEl = row.querySelector('input[type="number"]');
+    const actEl = row.querySelector('input[type="checkbox"]');
+    row.querySelector('.btn-save').onclick = async ()=>{
+      showSpinner(true);
+      try{
+        const body = { daily_target: Number(dailyEl.value||0), active: !!actEl.checked };
+        const res = await apiFetch(`/inboxes/${inb.id}`, {method:'PATCH', body: JSON.stringify(body)});
+        if (!res.ok){
+          const data = await safeJson(res);
+          throw new Error(data?.detail || (res.status+' '+res.statusText));
+        }
+        toast('Inbox updated');
+        await loadInboxes();
+      }catch(err){ toast(String(err.message||err), 'error'); }
+      finally{ showSpinner(false); }
+    };
+    row.querySelector('.btn-peers').onclick = ()=> openPeers(inb.id, inb.label);
+    return row;
   }
-}
-function renderPeerList(peers) {
-  const list = $('#peerList');
-  if (peers === null) { list.innerHTML = '<div class="muted">Loading peers…</div>'; return; }
-  if (!peers || peers.length === 0) { list.innerHTML = '<div class="muted">(no peers yet)</div>'; return; }
-  list.innerHTML = '';
-  for (const p of peers) {
-    const el = document.createElement('div');
-    el.className = 'pill';
-    el.textContent = p.peer_email || p.email || String(p);
-    list.appendChild(el);
+  async function loadInboxes(){
+    try{
+      const res = await fetch('/inboxes');
+      const list = await safeJson(res) || [];
+      inboxCache = list;
+      const wrap = $('#inboxes-table-wrap');
+      const table = document.createElement('table');
+      table.innerHTML = `
+        <thead><tr>
+          <th>Inbox</th><th>Daily</th><th>Status</th><th>Actions</th>
+        </tr></thead>
+        <tbody></tbody>
+      `;
+      const tb = table.querySelector('tbody');
+      list.forEach(i=>tb.appendChild(inboxRow(i)));
+      wrap.innerHTML = '';
+      wrap.appendChild(table);
+    }catch(err){
+      $('#inboxes-table-wrap').innerHTML = '<div class="muted">Failed to load inboxes.</div>';
+    }
   }
-}
-$('#peerAddBtn').onclick = async ()=>{
-  const val = $('#peerInput').value.trim();
-  if(!val){ toast('Enter a peer email','info'); return; }
-  try{
-    const r = await api('/peers', {method:'POST', body: JSON.stringify({ inbox_id: currentPeerInboxId, peer_email: val })});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    $('#peerInput').value='';
-    toast('Peer added','ok');
-    reloadPeers();
-  }catch(e){ toast('Add failed: '+e.message,'err'); }
-};
 
-/* ======================= INIT ======================= */
-async function refreshAll(){
-  await Promise.all([loadInboxes(), loadLogs(), refreshKPIs()]);
-}
-$('#btn-reload').onclick = loadInboxes;
-window.addEventListener('load', async ()=>{
-  await ensureToken();
-  if(ADMIN_TOKEN) refreshAll();
-});
+  $('#btn-create-inbox').onclick = async ()=>{
+    const payload = {
+      label: $('#f-label').value.trim(),
+      daily_target: Number($('#f-daily').value||0) || 30,
+      active: $('#f-active').checked,
+      smtp_host: $('#f-smtp-host').value.trim(),
+      smtp_port: Number($('#f-smtp-port').value||0) || 587,
+      smtp_user: $('#f-smtp-user').value.trim(),
+      smtp_pass: $('#f-smtp-pass').value,
+      smtp_tls: $('#f-smtp-tls').checked,
+      imap_host: $('#f-imap-host').value.trim(),
+      imap_port: Number($('#f-imap-port').value||0) || 993,
+      imap_user: $('#f-imap-user').value.trim(),
+      imap_pass: $('#f-imap-pass').value,
+      imap_ssl: $('#f-imap-ssl').checked,
+    };
+    if (!payload.label || !payload.smtp_user || !payload.imap_user){
+      return toast('Please fill the required fields (label, SMTP/IMAP user).', 'error');
+    }
+    showSpinner(true);
+    try{
+      const res = await apiFetch('/inboxes', {method:'POST', body: JSON.stringify(payload)});
+      const data = await safeJson(res);
+      if (!res.ok) throw new Error(data?.detail || (res.status+' '+res.statusText));
+      toast('Inbox created');
+      // clear minimal fields
+      $('#f-label').value=''; $('#f-smtp-user').value=''; $('#f-imap-user').value='';
+      $('#f-smtp-pass').value=''; $('#f-imap-pass').value='';
+      await Promise.all([loadInboxes(), loadStats()]);
+    }catch(err){ toast(String(err.message||err), 'error'); }
+    finally{ showSpinner(false); }
+  };
+
+  // ---------- Peers ----------
+  let currentPeerInboxId = null;
+  function renderPeerList(items){
+    const wrap = $('#peer-list');
+    if (!items || !items.length){
+      wrap.innerHTML = `<div class="muted">No peers yet.</div>`;
+      return;
+    }
+    const ul = document.createElement('div');
+    ul.className='wrap';
+    items.forEach(p=>{
+      const pill = document.createElement('div');
+      pill.className='tag';
+      pill.textContent = p.peer_email || '';
+      ul.appendChild(pill);
+    });
+    wrap.innerHTML=''; wrap.appendChild(ul);
+  }
+  async function openPeers(inboxId, label){
+    currentPeerInboxId = inboxId;
+    $('#peer-title').textContent = `Peers for ${label}`;
+    $('#peer-input').value='';
+    showSpinner(true);
+    try{
+      const res = await fetch(`/peers?inbox_id=${encodeURIComponent(inboxId)}`);
+      const data = await safeJson(res) || [];
+      renderPeerList(data);
+      $('#modal-peers').style.display='flex';
+      setTimeout(()=>$('#peer-input').focus(), 50);
+    }catch(err){ toast('Failed to load peers','error'); }
+    finally{ showSpinner(false); }
+  }
+  $('#btn-add-peer').onclick = async ()=>{
+    const email = $('#peer-input').value.trim();
+    if (!email) return toast('Enter an email','error');
+    if (!currentPeerInboxId) return;
+    showSpinner(true);
+    try{
+      const res = await apiFetch('/peers', {method:'POST', body: JSON.stringify({inbox_id: currentPeerInboxId, peer_email: email})});
+      const data = await safeJson(res);
+      if (!res.ok) throw new Error(data?.detail || (res.status+' '+res.statusText));
+      // reload
+      const r2 = await fetch(`/peers?inbox_id=${encodeURIComponent(currentPeerInboxId)}`);
+      renderPeerList(await safeJson(r2) || []);
+      $('#peer-input').value='';
+      toast('Peer added');
+    }catch(err){ toast(String(err.message||err),'error'); }
+    finally{ showSpinner(false); }
+  };
+  $('#btn-close-peers').onclick = ()=>{ $('#modal-peers').style.display='none'; };
+
+  // ---------- Logs ----------
+  function renderLogs(rows){
+    const wrap = $('#logs-wrap');
+    if (!rows || !rows.length){ wrap.innerHTML = '<div class="muted">No logs yet.</div>'; return; }
+    const table = document.createElement('table');
+    table.innerHTML = `
+      <thead><tr>
+        <th>Time</th><th>From</th><th>To</th><th>Status</th><th>Info</th>
+      </tr></thead>
+      <tbody></tbody>
+    `;
+    const tb = table.querySelector('tbody');
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      const when = r.created_at || r.ts || r.time || '';
+      const status = r.status || r.result || '';
+      const info = r.error || r.info || '';
+      tr.innerHTML = `
+        <td>${when}</td>
+        <td>${r.from_email || ''}</td>
+        <td>${r.to_email || ''}</td>
+        <td>${status}</td>
+        <td class="muted" style="max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${info}</td>
+      `;
+      tb.appendChild(tr);
+    });
+    wrap.innerHTML=''; wrap.appendChild(table);
+  }
+  async function loadLogs(){
+    try{
+      const res = await fetch('/send-logs?limit=50');
+      renderLogs(await safeJson(res) || []);
+    }catch{ $('#logs-wrap').innerHTML = '<div class="muted">Failed to load logs.</div>'; }
+  }
+  $('#btn-refresh-logs').onclick = loadLogs;
+
+  // ---------- Settings token quick save ----------
+  $('#btn-save-token').onclick = ()=>{
+    const v = $('#token-input').value.trim();
+    if (!v) return toast('Enter a token','error');
+    setToken(v);
+    toast('Token saved');
+  };
+
+  // ---------- Init ----------
+  (async function init(){
+    // show token modal if missing
+    if (!getToken()) openTokenModal();
+    await Promise.all([loadStats(), loadInboxes(), loadLogs()]);
+  })();
 </script>
 </body>
 </html>
