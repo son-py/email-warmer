@@ -1,540 +1,639 @@
-<!doctype html>
-<html lang="en" class="dark">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Email Warmer • Dashboard</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Email Warmer</title>
 
-  <!-- Tailwind via CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            ink:     '#0b1220',   // page bg (navy/black)
-            inkSoft: '#0f172a',   // section bg
-            card:    '#111827',   // cards
-            slateLine: '#1f2937', // borders
-            pill:    '#0b1730',
-            accent:  '#7c3aed',   // purple
-            cyan:    '#06b6d4'    // cyan
-          }
-        }
-      }
-    }
-  </script>
-  <style>
-    .tab{display:none}
-    .tab.active{display:block}
-    .fade-in{animation:fade .15s ease-out}
-    @keyframes fade{from{opacity:.0;transform:translateY(2px)}to{opacity:1;transform:none}}
-  </style>
+<!-- ====== DARK THEME ====== -->
+<style>
+:root{
+  --bg:#0b1220;
+  --panel:#0f172a;
+  --panel-2:#0e1422;
+  --muted:#98a2c3;
+  --muted-2:#7e8bb0;
+  --text:#e7edff;
+  --accent:#6b5cff;
+  --accent-2:#4bb3ff;
+  --ok:#22c55e;
+  --warn:#f59e0b;
+  --err:#ef4444;
+  --line:#203054;
+  --pill:#141c2e;
+  --input:#0f1627;
+  --input-br:#233052;
+}
+*{ box-sizing:border-box }
+html,body{ height:100% }
+body{
+  margin:0; background: radial-gradient(1200px 700px at -10% -20%, #13203c 0%, transparent 55%) no-repeat,
+              linear-gradient(#0a1120,#080e1a);
+  color:var(--text); font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
+}
+
+/* ====== LAYOUT ====== */
+.header{
+  padding:28px 18px 16px; position:sticky; top:0; z-index:10;
+  background: linear-gradient(180deg, rgba(10,16,28,.95), rgba(10,16,28,.75), transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(40,58,95,.35);
+}
+.container{ max-width:1100px; margin:0 auto; padding:0 14px 40px }
+.brand{
+  display:flex; align-items:center; gap:14px;
+}
+.brand .logo{
+  width:42px; height:42px; border-radius:12px;
+  background: linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:grid; place-items:center; font-weight:900; color:white; letter-spacing:.5px;
+  box-shadow: 0 10px 24px rgba(75,100,255,.25);
+}
+.brand h1{
+  font-size: clamp(22px, 3.2vw, 30px);
+  margin:0; letter-spacing:.3px;
+}
+.brand small{ color:var(--muted); display:block; margin-top:2px }
+
+/* NAV */
+.nav{
+  margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;
+}
+.tab{
+  cursor:pointer; user-select:none;
+  padding:10px 14px; border-radius:12px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg,var(--panel),#0c1426);
+  color: var(--text); letter-spacing:.2px;
+  transition: .16s ease;
+}
+.tab:hover{ transform:translateY(-1px); filter:brightness(1.06); border-color:#2a3a61; }
+.tab.active{
+  background: linear-gradient(90deg,var(--accent),var(--accent-2));
+  border-color:transparent; color:#fff; font-weight:600;
+}
+
+/* PANELS */
+.section{ display:none; margin-top:18px; }
+.section.show{ display:block; }
+.card{
+  background: linear-gradient(180deg,var(--panel-2),var(--panel));
+  border: 1px solid var(--line); border-radius:18px; padding:16px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.25);
+}
+
+/* GRID */
+.grid{ display:grid; gap:14px }
+@media (min-width: 900px){ .grid-2{ grid-template-columns: 1.2fr .9fr } }
+
+/* TABLE */
+.table{ width:100%; border-collapse:separate; border-spacing:0; }
+.table th, .table td{ padding:10px 12px; border-bottom:1px solid #1e2a49; text-align:left; }
+.table th{ color:var(--muted); font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.4px }
+.badge{ color:#bcd3ff; font-size:12px }
+
+/* INPUTS + BUTTONS */
+.input{
+  width:100%; background:var(--input); color:var(--text);
+  border:1px solid var(--input-br); border-radius:12px; padding:10px 12px; outline:none;
+}
+.input::placeholder{ color:var(--muted-2) }
+.input:focus{ border-color:#4b64ff; box-shadow: 0 0 0 3px rgba(75,100,255,.18); }
+
+.row{ display:flex; gap:12px }
+.row > *{ flex:1 }
+
+.checkbox{ display:flex; align-items:center; gap:10px; color:var(--muted) }
+
+.btn{
+  background:#111a2b; border:1px solid #2a3454; color:#dbe6ff;
+  padding:10px 14px; border-radius:12px; cursor:pointer; transition:.15s;
+}
+.btn:hover{ background:#151f33 }
+.btn-primary{
+  background: linear-gradient(90deg,var(--accent),var(--accent-2));
+  border-color: transparent; color:white; font-weight:600;
+}
+.btn-primary:hover{ filter:brightness(1.05) }
+.btn-ghost{
+  background: transparent; border:1px solid #27324c; color:#c7d2ff;
+  padding:8px 12px; border-radius:10px; line-height:1; cursor:pointer;
+}
+.btn-ghost:hover{ background:#131b2b; }
+
+/* STATUS DOTS */
+.dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px }
+.ok{ background:var(--ok) } .warn{ background:var(--warn) } .err{ background:var(--err) }
+
+/* TOASTS */
+.toast-wrap{ position: fixed; right:14px; bottom:14px; display:grid; gap:10px; z-index:80 }
+.toast{
+  padding:12px 14px; border-radius:12px; color:#fff; font-weight:600;
+  border:1px solid rgba(255,255,255,.12); backdrop-filter: blur(4px);
+  animation: raise .2s ease-out;
+}
+.toast.ok{ background: linear-gradient(180deg,#22c55e,#168a3e) }
+.toast.err{ background: linear-gradient(180deg,#ef4444,#b91c1c) }
+.toast.info{ background: linear-gradient(180deg,#475569,#1f2937) }
+@keyframes raise{ from{ transform:translateY(6px); opacity: .5 } to{ transform:none; opacity:1 } }
+
+/* TOKEN OVERLAY */
+.gate{
+  position:fixed; inset:0; background: radial-gradient(800px 500px at 70% -10%, rgba(107,92,255,.16), transparent) no-repeat,
+                                rgba(9,14,26,.85);
+  display:grid; place-items:center; z-index:100;
+}
+.gate .panel{
+  width:min(520px, 92vw); padding:18px; border-radius:18px;
+  background: linear-gradient(180deg,var(--panel-2),var(--panel));
+  border:1px solid var(--line); box-shadow: 0 20px 50px rgba(0,0,0,.45);
+}
+.gate h2{ margin:0 0 6px; font-size:22px }
+.gate p{ margin:0 0 12px; color:var(--muted) }
+.gate .row{ margin-top:10px }
+.err-text{ color:#ffb4b4; font-size:13px; min-height:18px }
+
+/* DASH CARDS */
+.kpis{ display:grid; grid-template-columns: repeat(3,1fr); gap:12px }
+.kpi{ padding:14px; border:1px solid var(--line); border-radius:16px; background: linear-gradient(180deg,#0f162a,#0e1424) }
+.kpi .n{ font-size:26px; font-weight:800 }
+.kpi .t{ color:var(--muted); text-transform:uppercase; font-size:12px; letter-spacing:.4px }
+
+/* PEERS MODAL */
+.modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 90; }
+.modal.show { display: flex; }
+.modal::before { content:""; position:absolute; inset:0; background:rgba(8,12,20,.72); backdrop-filter: blur(6px); }
+.modal-card {
+  position: relative; width: min(680px, 92vw);
+  background: linear-gradient(180deg,#0e1422,#0c1220);
+  border: 1px solid #1f2a44; border-radius: 18px;
+  box-shadow: 0 10px 32px rgba(0,0,0,.45);
+  color: #e6ecff;
+  padding: 18px 18px 14px;
+  animation: pop .16s ease-out;
+}
+@keyframes pop { from { transform: translateY(8px) scale(.98); opacity: .6 } to { transform: none; opacity: 1 } }
+.modal-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.modal-head h3 { font-size: 20px; font-weight: 700; letter-spacing:.2px; }
+.peer-list { display:flex; flex-wrap:wrap; gap:8px; padding:6px 2px 2px; min-height:38px; }
+.pill { padding:6px 10px; border-radius:999px; font-size:13px; background: var(--pill); border:1px solid #243252; color:#cfe1ff; }
+.peer-add { display:flex; gap:10px; margin-top:14px; }
+.modal-foot { display:flex; justify-content:flex-end; margin-top:14px; }
+
+/* UTIL */
+.muted{ color:var(--muted) }
+.space{ height:4px }
+.center{ display:flex; align-items:center; justify-content:center }
+.right{ text-align:right }
+</style>
 </head>
-<body class="bg-ink text-white selection:bg-cyan-500 selection:text-black">
 
-  <!-- ===== TOKEN MODAL ===== -->
-  <div id="authModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm">
-    <div class="w-[92%] max-w-md rounded-2xl border border-slate-700 bg-gradient-to-b from-inkSoft to-card/80 p-6 shadow-2xl">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="h-10 w-10 rounded-xl bg-cyan-500/20 flex items-center justify-center text-xl">🔒</div>
-        <h2 class="text-xl font-bold tracking-tight">Enter Admin Token</h2>
-      </div>
-      <p class="text-white/70 text-sm mb-4">Paste the value of <code>APP_ADMIN_TOKEN</code> to unlock the dashboard.</p>
-      <div class="space-y-3">
-        <input id="modalTokenInput" type="password"
-               class="w-full rounded-xl bg-card text-white placeholder:text-slate-400 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-               placeholder="••••••••" />
-        <div class="flex items-center justify-between">
-          <label class="flex items-center gap-2 text-xs text-white/70 select-none">
-            <input id="toggleShow" type="checkbox" class="accent-cyan-500"> Show token
-          </label>
-          <button id="authSubmit"
-                  class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gradient-to-r from-accent to-cyan-500 text-white font-medium border border-white/10 hover:opacity-95 hover:shadow-[0_0_0_3px_rgba(6,182,212,0.15)] transition">
-            Unlock
-          </button>
-        </div>
-        <p id="authError" class="text-red-400 text-sm hidden">Invalid token. Please try again.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== GLOBAL POPUP (success/error/info) ===== -->
-  <div id="popup" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/60">
-    <div class="w-[92%] max-w-md rounded-2xl border border-slate-700 bg-inkSoft p-5 shadow-2xl fade-in">
-      <div class="flex items-start gap-3">
-        <div id="popupIcon" class="h-9 w-9 rounded-xl flex items-center justify-center text-lg">ℹ️</div>
-        <div class="flex-1">
-          <h3 id="popupTitle" class="text-lg font-semibold">Title</h3>
-          <p id="popupMsg" class="text-sm text-white/80 mt-1 break-words">Message</p>
-          <div class="mt-4 text-right">
-            <button id="popupClose" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10">Close</button>
-          </div>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="brand">
+        <div class="logo">EW</div>
+        <div>
+          <h1>Email Warmer</h1>
+          <small>Warm up and monitor your sender reputation.</small>
         </div>
       </div>
+      <nav class="nav" id="tabs">
+        <div class="tab active" data-tab="dash">Dashboard</div>
+        <div class="tab" data-tab="inboxes">Inboxes</div>
+        <div class="tab" data-tab="logs">Logs</div>
+        <div class="tab" data-tab="settings">Settings</div>
+      </nav>
     </div>
-  </div>
-
-  <!-- ===== TOP BAR ===== -->
-  <header class="border-b border-slateLine bg-ink/80 backdrop-blur sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="h-11 w-11 rounded-2xl bg-gradient-to-br from-accent/30 to-cyan-500/30 flex items-center justify-center">🔥</div>
-        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">
-          <span class="bg-gradient-to-r from-white via-cyan-300 to-white bg-clip-text text-transparent">Email Warmer By Arman</span>
-        </h1>
-      </div>
-      <div class="flex items-center gap-2">
-        <button id="darkToggle" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs">Toggle theme</button>
-        <button id="logoutBtn"  class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs">Logout</button>
-      </div>
-    </div>
-
-    <!-- Nav pills -->
-    <nav class="max-w-7xl mx-auto px-4 pb-3">
-      <ul class="flex gap-2">
-        <li><button data-tab="dash"     class="tabpill rounded-2xl px-4 py-2 bg-pill/80 border border-slate-700 text-white/80 hover:bg-pink-700/10 hover:text-white transition ring-1 ring-transparent">Dashboard</button></li>
-        <li><button data-tab="inboxes"  class="tabpill rounded-2xl px-4 py-2 bg-pill/80 border border-slate-700 text-white/80 hover:bg-pink-700/10 hover:text-white transition ring-1 ring-transparent">Inboxes</button></li>
-        <li><button data-tab="logs"     class="tabpill rounded-2xl px-4 py-2 bg-pill/80 border border-slate-700 text-white/80 hover:bg-pink-700/10 hover:text-white transition ring-1 ring-transparent">Logs</button></li>
-        <li><button data-tab="settings" class="tabpill rounded-2xl px-4 py-2 bg-pill/80 border border-slate-700 text-white/80 hover:bg-pink-700/10 hover:text-white transition ring-1 ring-transparent">Settings</button></li>
-      </ul>
-    </nav>
   </header>
 
-  <!-- ===== MAIN ===== -->
-  <main class="max-w-7xl mx-auto px-4 py-6 space-y-8">
-
+  <main class="container">
     <!-- DASHBOARD -->
-    <section id="tab-dash" class="tab active">
-      <div class="grid md:grid-cols-3 gap-4">
-        <div class="rounded-2xl bg-card/90 border border-slate-700 p-5 shadow">
-          <div class="text-white/60 text-xs">Total inboxes</div>
-          <div id="stat-inboxes" class="text-3xl font-semibold mt-1">—</div>
-        </div>
-        <div class="rounded-2xl bg-card/90 border border-slate-700 p-5 shadow">
-          <div class="text-white/60 text-xs">Sends today</div>
-          <div id="stat-today" class="text-3xl font-semibold mt-1">—</div>
-        </div>
-        <div class="rounded-2xl bg-card/90 border border-slate-700 p-5 shadow">
-          <div class="text-white/60 text-xs">All-time sends</div>
-          <div id="stat-total" class="text-3xl font-semibold mt-1">—</div>
-        </div>
+    <section id="sec-dash" class="section show">
+      <div class="kpis">
+        <div class="kpi"><div class="n" id="kpi-inboxes">0</div><div class="t">Connected</div></div>
+        <div class="kpi"><div class="n" id="kpi-active">0</div><div class="t">Active</div></div>
+        <div class="kpi"><div class="n" id="kpi-target">0</div><div class="t">Daily Target</div></div>
       </div>
-
-      <div class="rounded-2xl bg-card/90 border border-slate-700 p-5 shadow mt-6">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="font-medium">Per-inbox (today)</h2>
-          <button id="refreshStats" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs">Refresh</button>
+      <div class="space"></div>
+      <div class="card">
+        <div class="row" style="align-items:center">
+          <div class="muted">Quick actions</div>
+          <div class="right" style="flex:1"></div>
+          <button class="btn" id="btn-refresh-all">Refresh</button>
+          <button class="btn-primary" id="btn-run-now">Run Now</button>
         </div>
-        <table class="w-full text-sm">
-          <thead class="text-white/60">
-            <tr><th class="text-left py-2">Inbox ID</th><th class="text-left py-2">Count</th></tr>
-          </thead>
-          <tbody id="perInboxToday"></tbody>
-        </table>
       </div>
     </section>
 
     <!-- INBOXES -->
-    <section id="tab-inboxes" class="tab">
-      <div class="grid md:grid-cols-3 gap-4">
-        <!-- List -->
-        <div class="rounded-2xl bg-card/90 border border-slate-700 p-5 shadow md:col-span-2">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="font-medium">Connected Inboxes</h2>
-            <button id="reloadInboxes" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs">Reload</button>
+    <section id="sec-inboxes" class="section">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="row" style="align-items:center; margin-bottom:8px">
+            <h3 style="margin:0">Connected Inboxes</h3>
+            <div style="flex:1"></div>
+            <button class="btn" id="btn-reload">Reload</button>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead class="text-white/60">
-                <tr>
-                  <th class="text-left py-2">Label</th>
-                  <th class="text-left py-2">Daily target</th>
-                  <th class="text-left py-2">Active</th>
-                  <th class="text-left py-2">Created</th>
-                  <th class="text-left py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="inboxTable"></tbody>
-            </table>
-          </div>
+
+          <table class="table" id="ibox-table">
+            <thead>
+              <tr>
+                <th>Label</th><th>Daily target</th><th>Active</th><th>Created</th><th class="right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ibox-body"></tbody>
+          </table>
         </div>
 
-        <!-- Create -->
-        <div class="rounded-2xl bg-card/90 border border-slate-700 p-5 shadow">
-          <h2 class="font-medium mb-3">Add Inbox</h2>
+        <div class="card">
+          <h3 style="margin-top:0">Add Inbox</h3>
 
-          <div class="space-y-3">
-            <div class="grid grid-cols-3 gap-2">
-              <div class="col-span-2">
-                <label class="text-xs text-white/60">Label (email address)</label>
-                <input id="addLabel" placeholder="name@outlook.com"
-                  class="w-full rounded-xl bg-inkSoft text-white placeholder:text-slate-400 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40" />
-              </div>
-              <div>
-                <label class="text-xs text-white/60">Daily target</label>
-                <input id="addDaily" type="number" value="20" min="1"
-                  class="w-full rounded-xl bg-inkSoft text-white placeholder:text-slate-400 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40" />
-              </div>
+          <div class="row">
+            <div>
+              <label class="muted">Label (email address)</label>
+              <input id="f-label" class="input" placeholder="inbox@example.com">
             </div>
-
-            <label class="text-xs text-white/60">Provider</label>
-            <select id="addProvider"
-              class="w-full rounded-xl bg-inkSoft text-white border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40">
-              <option value="smtp">SMTP</option>
-            </select>
-
-            <!-- SMTP -->
-            <div class="mt-2">
-              <div class="text-xs text-white/60 mb-1">SMTP</div>
-              <div class="grid grid-cols-3 gap-2">
-                <input id="smtpHost" placeholder="smtp.office365.com"
-                  class="col-span-2 rounded-xl bg-inkSoft text-white placeholder:text-slate-400 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40" />
-                <input id="smtpPort" type="number" placeholder="587"
-                  class="rounded-xl bg-inkSoft text-white placeholder:text-slate-400 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40" />
-                <input id="smtpUser" placeholder="SMTP user (full email)"
-                  class="col-span-2 rounded-xl bg-inkSoft text-white placeholder:text-slate-300 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40" />
-                <input id="smtpPass" placeholder="SMTP pass / app password"
-                  class="rounded-xl bg-inkSoft text-white placeholder:text-slate-300 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40" />
-              </div>
-              <label class="flex items-center gap-2 mt-2 text-sm text-white/80">
-                <input id="useTLS" type="checkbox" checked class="accent-cyan-500"> Use TLS (STARTTLS)
-              </label>
+            <div>
+              <label class="muted">Daily target</label>
+              <input id="f-target" class="input" type="number" min="1" value="10">
             </div>
-
-            <!-- IMAP -->
-            <div class="mt-2">
-              <div class="text-xs text-white/60 mb-1">IMAP</div>
-              <div class="grid grid-cols-3 gap-2">
-                <input id="imapHost" placeholder="outlook.office365.com"
-                  class="col-span-2 rounded-xl bg-inkSoft text-white placeholder:text-slate-400 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40" />
-                <input id="imapPort" type="number" placeholder="993"
-                  class="rounded-xl bg-inkSoft text-white placeholder:text-slate-400 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40" />
-                <input id="imapUser" placeholder="IMAP user (full email)"
-                  class="col-span-2 rounded-xl bg-inkSoft text-white placeholder:text-slate-300 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40" />
-                <input id="imapPass" placeholder="IMAP pass / app password"
-                  class="rounded-xl bg-inkSoft text-white placeholder:text-slate-300 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40" />
-              </div>
-              <label class="flex items-center gap-2 mt-2 text-sm text-white/80">
-                <input id="useSSL" type="checkbox" checked class="accent-cyan-500"> Use SSL
-              </label>
-            </div>
-
-            <button id="addInbox"
-              class="w-full py-2.5 mt-2 rounded-2xl bg-gradient-to-r from-accent to-cyan-500 text-white font-semibold border border-white/10 hover:opacity-95 hover:shadow-[0_0_0_4px_rgba(6,182,212,0.15)] transition">
-              <span class="inline-flex items-center gap-2">
-                <svg id="createSpin" class="hidden animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="white" stroke-width="4"></circle><path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v4A4 4 0 008 12H4z"/></svg>
-                <span id="createLabel">Create</span>
-              </span>
-            </button>
           </div>
+
+          <div style="margin-top:10px">
+            <label class="muted">Provider</label>
+            <select id="f-provider" class="input">
+              <option value="smtp" selected>SMTP</option>
+              <option value="outlook">Outlook (manual SMTP/IMAP)</option>
+              <option value="gmail" disabled>Gmail (use App Password)</option>
+            </select>
+          </div>
+
+          <h4 class="muted" style="margin:14px 0 6px">SMTP</h4>
+          <div class="row">
+            <input id="f-smtp-host" class="input" placeholder="smtp.office365.com">
+            <input id="f-smtp-port" class="input" placeholder="587" value="587">
+          </div>
+          <div class="row" style="margin-top:10px">
+            <input id="f-smtp-user" class="input" placeholder="SMTP user (full email)">
+            <input id="f-smtp-pass" class="input" placeholder="SMTP pass / app password" type="password">
+          </div>
+          <label class="checkbox" style="margin-top:8px">
+            <input id="f-smtp-tls" type="checkbox" checked>
+            <span>Use TLS (STARTTLS)</span>
+          </label>
+
+          <h4 class="muted" style="margin:14px 0 6px">IMAP</h4>
+          <div class="row">
+            <input id="f-imap-host" class="input" placeholder="outlook.office365.com">
+            <input id="f-imap-port" class="input" placeholder="993" value="993">
+          </div>
+          <div class="row" style="margin-top:10px">
+            <input id="f-imap-user" class="input" placeholder="IMAP user (full email)">
+            <input id="f-imap-pass" class="input" placeholder="IMAP pass / app password" type="password">
+          </div>
+          <label class="checkbox" style="margin-top:8px">
+            <input id="f-imap-ssl" type="checkbox" checked>
+            <span>Use SSL</span>
+          </label>
+
+          <div class="center" style="margin-top:16px">
+            <button class="btn-primary" id="btn-create">Create</button>
+          </div>
+          <div id="create-err" class="err-text"></div>
         </div>
       </div>
     </section>
 
     <!-- LOGS -->
-    <section id="tab-logs" class="tab">
-      <div class="rounded-2xl bg-card/90 border border-slate-700 p-5 shadow">
-        <div class="flex items-center gap-3 mb-4">
-          <input id="filterInboxId"
-            class="w-72 rounded-xl bg-inkSoft text-white placeholder:text-slate-400 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-            placeholder="Filter by inbox_id (optional)" />
-          <input id="limitLogs" type="number" value="50"
-            class="w-24 rounded-xl bg-inkSoft text-white placeholder:text-slate-400 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40" />
-          <button id="loadLogs" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs">Load</button>
+    <section id="sec-logs" class="section">
+      <div class="card">
+        <div class="row" style="align-items:center; margin-bottom:8px">
+          <h3 style="margin:0">Recent send logs</h3>
+          <div style="flex:1"></div>
+          <button class="btn" id="btn-logs-reload">Reload</button>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="text-white/60">
-              <tr><th class="text-left py-2">Time</th><th class="text-left py-2">Inbox</th><th class="text-left py-2">To</th><th class="text-left py-2">Subject</th><th class="text-left py-2">Status</th><th class="text-left py-2">Error</th></tr>
-            </thead>
-            <tbody id="logRows"></tbody>
-          </table>
-        </div>
+        <div id="logs-area" style="white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#0a1020; border:1px solid #1c2847; border-radius:12px; padding:12px; min-height:180px; color:#d7e2ff"></div>
       </div>
     </section>
 
     <!-- SETTINGS -->
-    <section id="tab-settings" class="tab">
-      <div class="grid md:grid-cols-2 gap-4">
-        <div class="rounded-2xl bg-card/90 border border-slate-700 p-5 shadow">
-          <h2 class="font-medium mb-2">Admin Actions</h2>
-          <p class="text-white/70 text-sm mb-3">Trigger the worker immediately.</p>
-          <button id="runNow"
-            class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-accent to-cyan-500 text-white font-medium border border-white/10 hover:opacity-95 hover:shadow-[0_0_0_3px_rgba(6,182,212,0.15)] transition">
-            <svg id="runSpin" class="hidden animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="white" stroke-width="4"></circle><path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v4A4 4 0 008 12H4z"/></svg>
-            Run Now
-          </button>
-        </div>
-
-        <div class="rounded-2xl bg-card/90 border border-slate-700 p-5 shadow">
-          <h2 class="font-medium mb-2">Tips</h2>
-          <ul class="list-disc list-inside text-white/70 text-sm space-y-1">
-            <li>Start with 10–20 emails/day per inbox; ramp gradually.</li>
-            <li>Link both inboxes as peers so traffic looks natural.</li>
-            <li>Use the Logs tab to confirm sends/replies/star events.</li>
-          </ul>
+    <section id="sec-settings" class="section">
+      <div class="grid">
+        <div class="card">
+          <h3 style="margin-top:0">Admin</h3>
+          <div class="row">
+            <button class="btn-primary" id="btn-run-now-2">Run Now</button>
+            <button class="btn" id="btn-change-token">Change Admin Token</button>
+          </div>
+          <p class="muted" style="margin-top:8px">
+            “Run Now” executes one warm-up pass immediately. Token is sent as <code>X-Admin-Token</code>.
+          </p>
         </div>
       </div>
     </section>
-
   </main>
 
-  <!-- ===== SCRIPTS ===== -->
-  <script>
-    // ---------- helpers ----------
-    const API = window.location.origin;
-    const $  = (s) => document.querySelector(s);
-    const $$ = (s) => Array.from(document.querySelectorAll(s));
-    const fmt = (s) => s ?? "";
-    const time = (iso) => iso ? new Date(iso).toLocaleString() : "";
+  <!-- Toasts -->
+  <div class="toast-wrap" id="toasts"></div>
 
-    function token()      { return localStorage.getItem("APP_ADMIN_TOKEN") || ""; }
-    function setToken(v)  { localStorage.setItem("APP_ADMIN_TOKEN", v || ""); }
-    function clearToken() { localStorage.removeItem("APP_ADMIN_TOKEN"); }
+  <!-- Token Gate -->
+  <div class="gate" id="gate" style="display:none">
+    <div class="panel">
+      <h2>Enter admin access token</h2>
+      <p>This site is protected. Provide the server’s <code>X-Admin-Token</code> to continue.</p>
+      <div class="row">
+        <input id="gate-token" class="input" placeholder="Enter token…">
+        <button id="gate-continue" class="btn-primary">Continue</button>
+      </div>
+      <div id="gate-err" class="err-text"></div>
+      <p class="muted" style="margin-top:8px">Tip: you can change this later in <b>Settings → Change Admin Token</b>.</p>
+    </div>
+  </div>
 
-    async function api(path, opts={}) {
-      const headers = Object.assign({"Content-Type":"application/json","X-Admin-Token": token()}, opts.headers || {});
-      let res;
-      try {
-        res = await fetch(path.startsWith("http") ? path : `${API}${path}`, Object.assign({}, opts, {headers}));
-      } catch (netErr) {
-        throw { status: 0, message: "Network error. Please check your connection.", raw: netErr };
-      }
-      if (!res.ok) {
-        let detail = "";
-        try { const j = await res.json(); detail = j?.detail || j?.message || ""; } catch {}
-        if (res.status === 401) showAuth(true);
-        throw { status: res.status, message: detail || `HTTP ${res.status}`, raw: res };
-      }
-      try { return await res.json(); } catch { return {}; }
+  <!-- Peers Modal -->
+  <div id="peerModal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="peerTitle">
+      <div class="modal-head">
+        <h3 id="peerTitle">Peers</h3>
+        <button class="btn-ghost" id="peerClose">&times;</button>
+      </div>
+
+      <div class="peer-list" id="peerList">
+        <div class="muted">Loading peers…</div>
+      </div>
+
+      <div class="peer-add">
+        <input id="peerInput" class="input" placeholder="peer@example.com" autocomplete="off">
+        <button id="peerAddBtn" class="btn-primary">Add</button>
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn" id="peerCloseBottom">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ======================= UTILITIES ======================= */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => document.querySelectorAll(sel);
+
+let ADMIN_TOKEN = localStorage.getItem('X_ADMIN_TOKEN') || '';
+
+function api(path, opts = {}) {
+  const headers = {'Content-Type': 'application/json', ...(opts.headers||{})};
+  if (ADMIN_TOKEN) headers['X-Admin-Token'] = ADMIN_TOKEN;
+  return fetch(path, {...opts, headers});
+}
+function toast(msg, type='info', ms=3000){
+  const wrap = $('#toasts');
+  const d = document.createElement('div');
+  d.className = `toast ${type}`;
+  d.textContent = msg;
+  wrap.appendChild(d);
+  setTimeout(()=>{ d.style.opacity='0'; d.style.transform='translateY(4px)'; }, ms-200);
+  setTimeout(()=>wrap.removeChild(d), ms);
+}
+
+/* ======================= NAV TABS ======================= */
+const tabEls = $$('#tabs .tab');
+tabEls.forEach(t => t.addEventListener('click', () => {
+  tabEls.forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  const name = t.dataset.tab;
+  $$('.section').forEach(s => s.classList.remove('show'));
+  $('#sec-'+name).classList.add('show');
+  if (name==='inboxes') loadInboxes();
+  if (name==='logs') loadLogs();
+  if (name==='dash') refreshKPIs();
+}));
+
+/* ======================= TOKEN GATE ======================= */
+async function ensureToken(){
+  if(!ADMIN_TOKEN){ showGate(); return; }
+  // verify by hitting a protected endpoint
+  try{
+    const r = await api('/inboxes');
+    if (r.ok) { $('#gate').style.display='none'; return; }
+    showGate('Invalid token (HTTP '+r.status+')');
+  }catch(e){
+    showGate('Could not reach server');
+  }
+}
+function showGate(err){
+  $('#gate').style.display='grid';
+  $('#gate-err').textContent = err || '';
+}
+$('#gate-continue').onclick = async ()=>{
+  const token = $('#gate-token').value.trim();
+  if(!token){ $('#gate-err').textContent='Please enter a token'; return; }
+  ADMIN_TOKEN = token;
+  localStorage.setItem('X_ADMIN_TOKEN', ADMIN_TOKEN);
+  const r = await api('/inboxes');
+  if(r.ok){
+    $('#gate').style.display='none';
+    toast('Token accepted','ok');
+    await refreshAll();
+  }else{
+    $('#gate-err').textContent='Invalid token (HTTP '+r.status+')';
+  }
+};
+$('#btn-change-token').onclick = ()=>{
+  $('#gate-token').value='';
+  showGate();
+};
+
+/* ======================= DASH KPIs ======================= */
+async function refreshKPIs(){
+  try{
+    const [r1, r2] = await Promise.all([api('/inboxes'), api('/stats')]);
+    let ib = [], stats = {};
+    if (r1.ok) ib = await r1.json();
+    if (r2.ok) stats = await r2.json();
+    const active = ib.filter(x => x.active).length;
+    const target = ib.reduce((a,x)=>a+(x.daily_target||0),0);
+    $('#kpi-inboxes').textContent = ib.length;
+    $('#kpi-active').textContent = active;
+    $('#kpi-target').textContent = target;
+  }catch(e){ /* ignore */ }
+}
+$('#btn-refresh-all').onclick = refreshAll;
+
+/* ======================= INBOXES ======================= */
+async function loadInboxes(){
+  const body = $('#ibox-body');
+  body.innerHTML = '<tr><td colspan="5" class="muted">Loading…</td></tr>';
+  try{
+    const r = await api('/inboxes');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    if (data.length === 0){
+      body.innerHTML = '<tr><td colspan="5" class="muted">No inboxes yet.</td></tr>';
+      return;
     }
+    body.innerHTML = '';
+    for(const ib of data){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${ib.label}</td>
+        <td><input class="input" style="max-width:90px" type="number" min="1" value="${ib.daily_target||10}" data-field="daily_target"></td>
+        <td><label class="checkbox"><input type="checkbox" ${ib.active?'checked':''} data-field="active"><span class="badge">${ib.active?'active':'paused'}</span></label></td>
+        <td>${new Date(ib.created_at||Date.now()).toLocaleString()}</td>
+        <td class="right">
+          <button class="btn" data-act="save">Save</button>
+          <button class="btn" data-act="peers">Peers</button>
+        </td>`;
+      body.appendChild(tr);
 
-    // ---------- popup ----------
-    const popup = $("#popup");
-    const popupIcon = $("#popupIcon");
-    const popupTitle = $("#popupTitle");
-    const popupMsg = $("#popupMsg");
-    $("#popupClose").onclick = () => hidePopup();
-
-    function showPopup({title="Notice", message="", type="info"}){
-      popupTitle.textContent = title;
-      popupMsg.textContent = message;
-      popupIcon.textContent = type === "success" ? "✅" : type === "error" ? "❌" : "ℹ️";
-      popup.classList.remove("hidden");
-      popup.classList.add("flex");
-    }
-    function hidePopup(){
-      popup.classList.add("hidden");
-      popup.classList.remove("flex");
-    }
-
-    // ---------- theme / tabs ----------
-    $("#darkToggle").onclick = () => document.documentElement.classList.toggle("dark");
-    $("#logoutBtn").onclick  = () => { clearToken(); showAuth(false); };
-
-    $$(".tabpill").forEach(btn => {
-      btn.onclick = () => {
-        $$(".tabpill").forEach(b => b.classList.remove("ring-1","ring-cyan-500/40","bg-gradient-to-r","from-accent/40","to-cyan-500/30","text-white"));
-        btn.classList.add("ring-1","ring-cyan-500/40","bg-gradient-to-r","from-accent/40","to-cyan-500/30","text-white");
-        $$(".tab").forEach(el => el.classList.remove("active"));
-        document.querySelector(`#tab-${btn.dataset.tab}`).classList.add("active");
+      // wire actions
+      tr.querySelector('[data-act="save"]').onclick = async ()=>{
+        const target = tr.querySelector('[data-field="daily_target"]').valueAsNumber || 10;
+        const active = tr.querySelector('[data-field="active"]').checked;
+        const r = await api(`/inboxes/${ib.id}`, {method:'PATCH', body: JSON.stringify({daily_target: target, active})});
+        if(r.ok){ toast('Inbox saved','ok'); refreshKPIs(); } else { toast('Save failed (HTTP '+r.status+')','err'); }
       };
-    });
-
-    // ---------- auth modal ----------
-    const modal   = $("#authModal");
-    const input   = $("#modalTokenInput");
-    const errorEl = $("#authError");
-    $("#toggleShow").onchange = (e) => { input.type = e.target.checked ? "text" : "password"; };
-    function showAuth(bad=false){ if(bad) errorEl.classList.remove("hidden"); else errorEl.classList.add("hidden"); input.value=""; modal.classList.remove("hidden"); modal.classList.add("flex"); setTimeout(()=>input.focus(),50); }
-    function hideAuth(){ modal.classList.add("hidden"); modal.classList.remove("flex"); }
-    $("#authSubmit").onclick = async () => {
-      const t = input.value.trim();
-      if (!t) { errorEl.classList.remove("hidden"); return; }
-      const ok = await fetch(`${API}/inboxes`, { headers: { "X-Admin-Token": t } });
-      if (ok.status === 200) { setToken(t); hideAuth(); init(); } else { errorEl.classList.remove("hidden"); }
-    };
-    input.addEventListener("keydown",(e)=>{ if(e.key==="Enter") $("#authSubmit").click(); });
-
-    // ---------- dashboard ----------
-    async function loadStats() {
-      try {
-        const data = await api("/stats");
-        $("#stat-inboxes").textContent = data.total_inboxes;
-        $("#stat-today").textContent   = data.sends_today;
-        $("#stat-total").textContent   = data.total_sends;
-        const tbody = $("#perInboxToday"); tbody.innerHTML = "";
-        data.per_inbox_today.forEach(row => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td class="py-2">${fmt(row.inbox_id)}</td><td class="py-2">${row.count}</td>`;
-          tbody.appendChild(tr);
-        });
-      } catch (e) {
-        showPopup({title:"Failed to load stats", message:e.message || "Error", type:"error"});
-      }
+      tr.querySelector('[data-act="peers"]').onclick = ()=> openPeers(ib);
     }
-    $("#refreshStats").onclick = loadStats;
+  }catch(err){
+    body.innerHTML = `<tr><td colspan="5" class="muted">Failed to load inboxes (${err.message})</td></tr>`;
+  }
+}
+$('#btn-reload').onclick = loadInboxes;
 
-    // ---------- inboxes ----------
-    async function renderInboxes() {
-      try {
-        const rows = await api("/inboxes");
-        const tbody = $("#inboxTable"); tbody.innerHTML = "";
-        rows.forEach(i => {
-          const tr = document.createElement("tr");
-          tr.className = "border-t border-slateLine";
-          tr.innerHTML = `
-            <td class="py-2">${fmt(i.label)}</td>
-            <td class="py-2">
-              <input type="number" value="${i.daily_target}" min="1"
-                     class="w-24 rounded-lg bg-inkSoft text-white border border-slate-700 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-                     data-inbox="${i.id}" />
-            </td>
-            <td class="py-2">
-              <label class="inline-flex items-center gap-2 text-sm">
-                <input type="checkbox" ${i.active ? "checked": ""} data-active="${i.id}" class="accent-cyan-500"> active
-              </label>
-            </td>
-            <td class="py-2">${i.created_at ? new Date(i.created_at).toLocaleString() : ""}</td>
-            <td class="py-2">
-              <button class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs" data-save="${i.id}">Save</button>
-              <button class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs" data-peers="${i.id}">Peers</button>
-            </td>`;
-          tbody.appendChild(tr);
-        });
+// Create inbox
+$('#btn-create').onclick = async ()=>{
+  $('#create-err').textContent = '';
+  const payload = {
+    label: $('#f-label').value.trim(),
+    daily_target: $('#f-target').valueAsNumber || 10,
+    smtp_host: $('#f-smtp-host').value.trim(),
+    smtp_port: +($('#f-smtp-port').value.trim() || 587),
+    smtp_user: $('#f-smtp-user').value.trim(),
+    smtp_pass: $('#f-smtp-pass').value,
+    use_tls: $('#f-smtp-tls').checked,
+    imap_host: $('#f-imap-host').value.trim(),
+    imap_port: +($('#f-imap-port').value.trim() || 993),
+    imap_user: $('#f-imap-user').value.trim(),
+    imap_pass: $('#f-imap-pass').value,
+    use_ssl: $('#f-imap-ssl').checked,
+  };
 
-        $$("button[data-save]").forEach(btn => {
-          btn.onclick = async () => {
-            const id = btn.getAttribute("data-save");
-            const daily  = document.querySelector(`input[data-inbox="${id}"]`).value;
-            const active = document.querySelector(`input[data-active="${id}"]`).checked;
-            try {
-              await api(`/inboxes/${id}`, { method:"PATCH", body: JSON.stringify({ daily_target: Number(daily), active }) });
-              showPopup({title:"Inbox updated", message:"Settings saved.", type:"success"});
-            } catch (e) {
-              showPopup({title:"Update failed", message:e.message || "Error", type:"error"});
-            }
-          };
-        });
+  if (!payload.label || !payload.smtp_host || !payload.imap_host){
+    $('#create-err').textContent = 'Label, SMTP host and IMAP host are required.'; return;
+  }
+  try{
+    const r = await api('/inboxes', {method:'POST', body:JSON.stringify(payload)});
+    if(!r.ok){ throw new Error('HTTP '+r.status); }
+    toast('Inbox connected','ok');
+    // clear sensitive fields
+    $('#f-smtp-pass').value = ''; $('#f-imap-pass').value='';
+    await loadInboxes(); await refreshKPIs();
+  }catch(e){
+    $('#create-err').textContent = 'Create failed: '+e.message;
+    toast('Create failed','err');
+  }
+};
 
-        $$("button[data-peers]").forEach(btn => {
-          btn.onclick = async () => {
-            const id = btn.getAttribute("data-peers");
-            try {
-              const peers = await api(`/peers?inbox_id=${encodeURIComponent(id)}`);
-              const emails = peers.map(p => `${p.email} (${p.weight})`).join("\n") || "(none)";
-              const newPeer = prompt(`Peers for ${id}:\n\n${emails}\n\nAdd new peer email (or leave blank):`);
-              if (newPeer && newPeer.includes("@")) {
-                await api("/peers", { method:"POST", body: JSON.stringify({ inbox_id: id, peer_email: newPeer, weight: 1 }) });
-                showPopup({title:"Peer added", message:newPeer, type:"success"});
-              }
-            } catch (e) {
-              showPopup({title:"Could not load/add peers", message:e.message || "Error", type:"error"});
-            }
-          };
-        });
+/* ======================= LOGS ======================= */
+async function loadLogs(){
+  const area = $('#logs-area');
+  area.textContent = 'Loading…';
+  try{
+    const r = await api('/send-logs?limit=50');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const logs = await r.json();
+    area.textContent = (logs && logs.length)
+      ? logs.map(l => typeof l==='string' ? l : JSON.stringify(l)).join('\n')
+      : '(no logs yet)';
+  }catch(e){ area.textContent = 'Failed to load logs: '+e.message; }
+}
+$('#btn-logs-reload').onclick = loadLogs;
 
-      } catch (e) {
-        showPopup({title:"Failed to load inboxes", message:e.message || "Error", type:"error"});
-      }
-    }
-    $("#reloadInboxes").onclick = renderInboxes;
+/* ======================= RUN NOW ======================= */
+async function runNow(){
+  try{
+    const r = await api('/run-now', {method:'POST'});
+    if(r.ok) toast('Run dispatched','ok'); else toast('Run failed (HTTP '+r.status+')','err');
+  }catch(e){ toast('Run failed: '+e.message,'err'); }
+}
+$('#btn-run-now').onclick = runNow;
+$('#btn-run-now-2').onclick = runNow;
 
-    $("#addInbox").onclick = async () => {
-      const btn  = $("#addInbox");
-      const spin = $("#createSpin");
-      const lbl  = $("#createLabel");
+/* ======================= PEERS MODAL ======================= */
+let currentPeerInboxId = null;
+let currentPeerInboxLabel = null;
 
-      const payload = {
-        label: $("#addLabel").value.trim(),
-        provider: $("#addProvider").value,
-        daily_target: Number($("#addDaily").value || 20),
-        smtp_host: $("#smtpHost").value.trim(),
-        smtp_port: Number($("#smtpPort").value || 587),
-        smtp_user: $("#smtpUser").value.trim(),
-        smtp_pass: $("#smtpPass").value.trim(),
-        use_tls: $("#useTLS").checked,
-        imap_host: $("#imapHost").value.trim(),
-        imap_port: Number($("#imapPort").value || 993),
-        imap_user: $("#imapUser").value.trim(),
-        imap_pass: $("#imapPass").value.trim(),
-        use_ssl: $("#useSSL").checked
-      };
+async function openPeers(inbox) {
+  currentPeerInboxId = inbox.id;
+  currentPeerInboxLabel = inbox.label || inbox.id;
+  $('#peerTitle').textContent = `Peers for ${currentPeerInboxLabel}`;
+  $('#peerInput').value = '';
+  renderPeerList(null); // loading
+  showPeerModal();
+  await reloadPeers();
+}
+function showPeerModal() {
+  const m = $('#peerModal');
+  m.classList.add('show');
+  m.setAttribute('aria-hidden', 'false');
+}
+function closePeerModal() {
+  const m = $('#peerModal');
+  m.classList.remove('show');
+  m.setAttribute('aria-hidden', 'true');
+}
+$('#peerClose').onclick = closePeerModal;
+$('#peerCloseBottom').onclick = closePeerModal;
+$('#peerModal').addEventListener('click', (e)=>{
+  if (e.target.id === 'peerModal') closePeerModal(); // backdrop close
+});
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closePeerModal(); });
 
-      if (!payload.label || !payload.smtp_user || !payload.imap_user) {
-        showPopup({title:"Missing required fields", message:"Fill label, SMTP user and IMAP user.", type:"error"});
-        return;
-      }
+async function reloadPeers() {
+  try {
+    const r = await api(`/peers?inbox_id=${encodeURIComponent(currentPeerInboxId)}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const peers = await r.json();
+    renderPeerList(peers);
+  } catch (err) {
+    renderPeerList([]);
+    toast(`Could not load peers (${err.message})`, 'err');
+  }
+}
+function renderPeerList(peers) {
+  const list = $('#peerList');
+  if (peers === null) { list.innerHTML = '<div class="muted">Loading peers…</div>'; return; }
+  if (!peers || peers.length === 0) { list.innerHTML = '<div class="muted">(no peers yet)</div>'; return; }
+  list.innerHTML = '';
+  for (const p of peers) {
+    const el = document.createElement('div');
+    el.className = 'pill';
+    el.textContent = p.peer_email || p.email || String(p);
+    list.appendChild(el);
+  }
+}
+$('#peerAddBtn').onclick = async ()=>{
+  const val = $('#peerInput').value.trim();
+  if(!val){ toast('Enter a peer email','info'); return; }
+  try{
+    const r = await api('/peers', {method:'POST', body: JSON.stringify({ inbox_id: currentPeerInboxId, peer_email: val })});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    $('#peerInput').value='';
+    toast('Peer added','ok');
+    reloadPeers();
+  }catch(e){ toast('Add failed: '+e.message,'err'); }
+};
 
-      // UI -> loading
-      btn.disabled = true; spin.classList.remove("hidden"); lbl.textContent = "Creating…";
-
-      try {
-        await api("/inboxes", { method:"POST", body: JSON.stringify(payload) });
-        await renderInboxes();
-        showPopup({title:"Inbox created", message:"Saved successfully. Add peers next.", type:"success"});
-      } catch (e) {
-        const msg = e?.message || "Failed to create inbox. Check credentials and that migrations ran.";
-        showPopup({title:"Create failed", message: msg, type:"error"});
-      } finally {
-        btn.disabled = false; spin.classList.add("hidden"); lbl.textContent = "Create";
-      }
-    };
-
-    // ---------- logs ----------
-    $("#loadLogs").onclick = async () => {
-      const id = $("#filterInboxId").value.trim();
-      const lim = Number($("#limitLogs").value || 50);
-      const q = new URLSearchParams(); q.set("limit", lim); if (id) q.set("inbox_id", id);
-
-      try {
-        const rows = await api(`/send-logs?${q.toString()}`);
-        const tbody = $("#logRows"); tbody.innerHTML = "";
-        rows.forEach(r => {
-          const tr = document.createElement("tr");
-          tr.className = "border-t border-slateLine";
-          tr.innerHTML = `
-            <td class="py-2">${r.sent_at ? new Date(r.sent_at).toLocaleString() : ""}</td>
-            <td class="py-2 text-white/70">${fmt(r.inbox_id)}</td>
-            <td class="py-2">${fmt(r.to_email)}</td>
-            <td class="py-2">${fmt(r.subject)}</td>
-            <td class="py-2">${r.success ? '<span class="text-green-400">OK</span>' : '<span class="text-red-400">FAIL</span>'}</td>
-            <td class="py-2 text-white/50">${fmt(r.error)}</td>`;
-          tbody.appendChild(tr);
-        });
-        showPopup({title:"Logs loaded", message:`Fetched ${rows.length} entries.`, type:"success"});
-      } catch (e) {
-        showPopup({title:"Failed to load logs", message:e.message || "Error", type:"error"});
-      }
-    };
-
-    // ---------- settings ----------
-    $("#runNow").onclick = async () => {
-      const btn = $("#runNow"), spin = $("#runSpin");
-      btn.disabled = true; spin.classList.remove("hidden");
-      try {
-        await api("/run-now", { method:"POST" });
-        showPopup({title:"Worker triggered", message:"Run started.", type:"success"});
-      } catch (e) {
-        showPopup({title:"Run failed", message:e.message || "Error", type:"error"});
-      } finally {
-        btn.disabled = false; spin.classList.add("hidden");
-      }
-    };
-
-    // ---------- init ----------
-    async function init(){ await Promise.all([loadStats(), renderInboxes()]); try{ await $("#loadLogs").click(); }catch{} }
-
-    // Bootstrap: validate stored token or show modal
-    (async function bootstrap(){
-      const t = token();
-      if (!t) { showAuth(false); return; }
-      const ok = await fetch(`${API}/inboxes`, { headers: { "X-Admin-Token": t } });
-      if (ok.status === 200) { hideAuth(); init(); }
-      else { showAuth(true); }
-    })();
-  </script>
+/* ======================= INIT ======================= */
+async function refreshAll(){
+  await Promise.all([loadInboxes(), loadLogs(), refreshKPIs()]);
+}
+$('#btn-reload').onclick = loadInboxes;
+window.addEventListener('load', async ()=>{
+  await ensureToken();
+  if(ADMIN_TOKEN) refreshAll();
+});
+</script>
 </body>
 </html>
